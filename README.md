@@ -18,15 +18,15 @@ will receive:
 
 ## Timetable
 
-| Date               |Milestone                  |Method of presentation                |
-|----------------|-------------------------------|--------------------------------------|
-|01/05/2021 	 | GUI file selection                             |Code in repository   |
-|01/06/2021      | Complete implementation of pre-processing stage| Code in repository  |
-|01/07/2021      | Complete implementation of ball detection stage| Code in repository  |
-|01/08/2021	     | Complete implementation of ball tracking stage | Code in repository  |
-|01/09/2021	     | Complete implementation of bounce detection    | Code in repository  |
-|14/09/2021	     | Implemented outputs of the application	      | Presentation        |
-|20/09/2021		 | Final version						          | Demonstration       |
+| Date               |Milestone                  |Method of presentation                |Status     |
+|----------------|-------------------------------|--------------------------------------|------------
+|~~01/05/2021~~  | ~~GUI file selection~~                         |~~Code in repository~~|✅        |                    
+|01/06/2021      | Complete implementation of pre-processing stage| Code in repository  |           |
+|01/07/2021      | Complete implementation of ball detection stage| Code in repository  |           |
+|01/08/2021	     | Complete implementation of ball tracking stage | Code in repository  |           |
+|01/09/2021	     | Complete implementation of bounce detection    | Code in repository  |           |
+|14/09/2021	     | Implemented outputs of the application	      | Presentation        |           |
+|20/09/2021		 | Final version						          | Demonstration       |           |
 
 
 ### References
