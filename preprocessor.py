@@ -1,9 +1,6 @@
-import logging
-
 import cv2 as cv
-from threading import Thread
-from queue import Queue
 import numpy as np
+from collections import deque
 
 
 class Preprocessor:
@@ -25,43 +22,38 @@ class Preprocessor:
     from the background. The foreground consists of exactly our objects of interest - the moving players and the ball.
     """
 
-    def __init__(self, path):
-        # initialize the file video stream along with the boolean
-        # used to indicate if the thread should be stopped or not
-        self.stream = cv.VideoCapture(path)
-        # initialize the queue used to store frames read from the video file
-        self.queue = Queue(maxsize=3)
+    def __init__(self):
+        # deque is convenient, as once at max capacity, it auto-discards the last frame after adding a new one
+        self.frame_buffer = deque(maxlen=3)  # contains smoothed grayscale images, used as a "sliding window"
+        self.frame_difference_buffer = deque(maxlen=2)  # contains differenced images, used as a "sliding window"
+        self.dilation_kernel = np.ones((5, 5), np.uint8)
 
-    def preprocess_frames(self):
-        while self.stream.isOpened():
-            # .read() is a blocking operation, might want to do something about that in the future
-            successful_read, frame = self.stream.read()
-
-            if not successful_read:
-                logging.getLogger("Can't receive frame (stream end?). Exiting ...")
-                break
-
-            # Covert image to a grayscale image
-            gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-
-            # The queue keeps 3 frames in it
-            # self.queue.put(gray)
-
-            cv.imshow('frame', gray)
-            if cv.waitKey(1) == ord('q'):
-                break
-
-        self.stream.release()
-        cv.destroyAllWindows()
-
-    def reduce_noise(self):
-        pass
-
-    def frame_difference(self):
-        pass
-
-    def __gather_initial_frames(self):
+    def process(self, frame):
         """
-        Populates the queue with 3 frames initially to begin the preprocessing stage
+        Uses a sliding window approach
+        :return: A binary image that differentiates moving parts of the image from static parts from 3 last video frames
         """
-        pass
+        grayscaled = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        smoothed = cv.GaussianBlur(grayscaled, (5, 5), 0)
+        self.frame_buffer.append(smoothed)
+
+        if len(self.frame_buffer) < 3:  # Reading initial frames
+            if len(self.frame_buffer) == 2:  # We need two frames to start frame differencing
+                self.frame_difference_buffer.append(cv.absdiff(self.frame_buffer[0], self.frame_buffer[1]))
+            return None
+
+        # Apply frame differencing to the last two frames
+        difference = cv.absdiff(self.frame_buffer[1], self.frame_buffer[2])
+        self.frame_difference_buffer.append(difference)
+
+        # Combine with boolean "AND"
+        combined = cv.bitwise_and(self.frame_difference_buffer[0], self.frame_difference_buffer[1])
+
+        # Threshold to obtain binary image
+        thresholded = cv.threshold(combined, 0, 255, cv.THRESH_OTSU)[1]
+
+        # Morphological closing: dilation -> erosion
+        dilated = cv.dilate(thresholded, self.dilation_kernel, iterations=9)  # I played around with this quite a bit and it helped to increase iterations
+        processed = cv.erode(dilated, self.dilation_kernel)
+
+        return processed
