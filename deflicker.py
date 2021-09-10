@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 
+
 # goal: get local threshold values for subregions of the image for the deflicker method in the preprocessor
 
 # get a ~60 frames spanning histogram for each pixel
@@ -30,23 +31,7 @@ class Deflicker:
 
         self.added_pixel_intensity_values = np.zeros((video_width, video_height), dtype=np.uint32)
 
-    def add_pixel_intensities(self, frame):
-        """
-        For each pixel in a frame, adds its value to its cumulative intensity sum.
-        """
-
-        grayscaled = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        for x, y in np.ndindex(frame.shape):
-            self.pixel_intensity_values[x, y] += grayscaled[x, y]
-        self.frames_read += 1
-
-    def mean_pixel_intensities(self):
-        """
-        :return: Array of mean pixel intensities
-        """
-        return self.added_pixel_intensity_values / self.frames_read
-
-    def add_pixel_intensity_data(self, frame):
+    def __append_pixel_intensity_data(self, frame: np.ndarray):
         """
         Adds for each pixel (in a given frame) its intensity value to the array of pixel_intensity values.
         :param frame: a single video frame
@@ -57,3 +42,23 @@ class Deflicker:
             self.pixel_intensity_values[x, y, self.frames_read] = grayscaled[x, y]
 
         self.frames_read += 1
+
+    def __calculate_cumulative_intensities(self):
+        """
+        Calculates the cumulative intensities
+        :return: Array where each element represents the cumulative intensity of the pixel throughout the given frames.
+        """
+
+        num_rows, num_cols, *rest = self.pixel_intensity_values.shape
+        cumulative_intensities = np.ndarray((num_rows, num_cols))
+
+        for x, y, z in np.ndindex(self.pixel_intensity_values.shape):
+            cumulative_intensities[x, y] += self.pixel_intensity_values[x, y, z]
+
+        return cumulative_intensities
+
+    def get_mean_pixel_intensities(self):
+        """
+        :return: Array of mean pixel intensities
+        """
+        return self.added_pixel_intensity_values / self.frames_read
