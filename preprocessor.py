@@ -28,7 +28,7 @@ class Preprocessor:
         # deque is convenient, as once at max capacity, it auto-discards the last frame after adding a new one
         self.frame_buffer = deque(maxlen=3)  # contains smoothed grayscale images, used as a "sliding window"
         self.frame_difference_buffer = deque(maxlen=2)  # contains differenced images, used as a "sliding window"
-        self.dilation_kernel = np.ones((5, 5), np.uint8)
+        self.dilation_kernel = np.ones((3, 3), np.uint8)
 
     def process(self, frame):
         """
@@ -60,14 +60,14 @@ class Preprocessor:
         thresholded_with_discard = discards_low_intensity_pixels(combined)
 
         processed = self.morphological_close(thresholded)
-        processed_with_discard = self.morphological_close(thresholded_with_discard)
+        #processed_with_discard = self.morphological_close(thresholded_with_discard)
 
         # show_histogram(combined, processed)
-        return processed, processed_with_discard
+        return processed
 
     def morphological_close(self, image):
         # Morphological closing: dilation -> erosion
-        dilated = cv.dilate(image, self.dilation_kernel, iterations=13)
+        dilated = cv.dilate(image, self.dilation_kernel, iterations=5)
         processed = cv.erode(dilated, self.dilation_kernel)
         return processed
 
@@ -113,7 +113,6 @@ def discards_low_intensity_pixels(frame):
     retf, thresholded = cv.threshold(thresholded1, 0, 255, cv.THRESH_OTSU)
     print("retf: " + str(retf))
     return thresholded
-
 
 def show_histogram(img, processed_img):
     """Debugging function that shows plotted histogram of two images."""
