@@ -16,54 +16,48 @@ def main():
 
     VIDEO_PATH = "resources/test/test_media_normal.mov"
     VIDEO_PATH1 = "resources/test/720p_solo.mov"
+    VIDEO_PATH5 = "resources/test/480p_solo.mov"
     VIDEO_PATH3 = "resources/test/2players.mp4"
     VIDEO_PATH2 = "resources/test/rally.mp4"
 
     preprocessor = Preprocessor()
-    detector = Detector()
-
-    fourcc = cv.VideoWriter_fourcc('M','J','P','G')
-    video = cv2.VideoWriter('video.avi', fourcc, 1, (1280, 720))
-    # video = cv2.VideoWriter('video.avi', fourcc, 1, (720, 1280))
+    #detector = Detector()
 
 
-    for frame in get_video_frames(VIDEO_PATH1):
+    for frame in get_video_frames(VIDEO_PATH5):
         preprocessed = preprocessor.process(frame)
 
         if preprocessed is not None:
-            processed_without_discard = preprocessed[0]
-            processed_with_discard = preprocessed[1]
 
             # RETR external doesn't store any contours within contours
-            # cnt, hierarchy = cv.findContours(cv.Canny(preprocessed, 0, 1), cv2.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+            cnt, hierarchy = cv.findContours(cv.Canny(preprocessed, 0, 1), cv2.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
             #
-            # max_area = sys.maxsize
-            # index = 0
-            # i = 0
-            # for c in cnt:
-            #     area = cv.contourArea(c)
-            #     if area < max_area:
-            #         index = i
-            #         max_area = area
-            #     i += 1
-            #
-            # images = []
-            #
-            # img = cv.drawContours(frame, cnt, index, (255, 0, 0), 15)
-            # cnts = cv.drawContours(frame, cnt, -1, (0, 255, 0), 3)
-            #
-            # images.append(img)
-            # images.append(cnts)
-            # newimg = blend(images)
-            # cv.imshow('frame2', processed_without_discard)  # Debug
-            #cv.imshow('frame', processed_with_discard)
+            max_area = sys.maxsize
+            index = 0
+            i = 0
+            for c in cnt:
+                area = cv.contourArea(c)
+                if area < max_area:
+                    index = i
+                    max_area = area
+                i += 1
 
-            video.write(processed_without_discard)
+            images = []
+            #
+            img = cv.drawContours(frame, cnt, index, (255, 0, 0), 15)
+            cnts = cv.drawContours(frame, cnt, -1, (0, 255, 0), 3)
+            #
+            images.append(img)
+            images.append(cnts)
+            newimg = blend(images)
+            cv.imshow('frame', newimg)
 
-            # if cv.waitKey(1) == ord('q'):
-            #     break
+            # video.write(processed_without_discard)
 
-    video.release()
+            if cv.waitKey(1) == ord('q'):
+                break
+
+    # video.release()
     cv.destroyAllWindows()
 
 
