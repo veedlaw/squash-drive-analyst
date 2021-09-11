@@ -3,28 +3,35 @@ import sys
 
 import cv2
 from Gui import *
-import logging
+from deflicker import Deflicker
 
 from detector import Detector
 from preprocessor import *
+from videoReader import VideoReader
 
 
 def main():
+    #region gui
     # g = Gui()
     # g.create_and_show_GUI()
     # print(g.file_path) # Debug
+    #endregion gui
 
+    #region video paths
     VIDEO_PATH = "resources/test/test_media_normal.mov"
     VIDEO_PATH1 = "resources/test/720p_solo.mov"
     VIDEO_PATH5 = "resources/test/480p_solo.mov"
     VIDEO_PATH3 = "resources/test/2players.mp4"
     VIDEO_PATH2 = "resources/test/rally.mp4"
+    #endregion video paths
 
+    video_reader = VideoReader(VIDEO_PATH5)
+    deflicker = Deflicker()
     preprocessor = Preprocessor()
-    #detector = Detector()
+    # detector = Detector
 
 
-    for frame in get_video_frames(VIDEO_PATH5):
+    for frame in video_reader.get_frame():
         preprocessed = preprocessor.process(frame)
 
         if preprocessed is not None:
@@ -59,25 +66,6 @@ def main():
 
     # video.release()
     cv.destroyAllWindows()
-
-
-def get_video_frames(path):
-    """
-    Feeds video frames using a generator
-    :param path: Path to video
-    :return: Single frame from video
-    """
-    stream = cv.VideoCapture(path)  # Initialize video capturing
-    while stream.isOpened():
-        # .read() is a blocking operation, might want to do something about that in the future
-        successful_read, frame = stream.read()
-
-        if not successful_read:
-            logging.getLogger("Can't receive frame (stream end?). Exiting ...")
-            break
-        yield frame
-
-    stream.release()
 
 
 def blend(list_images):  # Blend images equally.
