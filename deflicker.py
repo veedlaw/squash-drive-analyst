@@ -62,3 +62,6 @@ class Deflicker:
         :return: Array of mean pixel intensities
         """
         return self.added_pixel_intensity_values / self.frames_read
+
+    def choose_pixels_to_follow(self):
+        pass
