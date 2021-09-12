@@ -37,8 +37,8 @@ class Preprocessor:
         """
         grayscaled = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-        if self.deflicker(grayscaled) is not None:
-            grayscaled = self.deflicker(grayscaled)
+        # if self.deflicker(grayscaled) is not None:
+        #     grayscaled = self.deflicker(grayscaled)
 
         smoothed = cv.GaussianBlur(grayscaled, (5, 5), 0)
 
@@ -57,7 +57,7 @@ class Preprocessor:
         combined = cv.bitwise_and(self.frame_difference_buffer[0], self.frame_difference_buffer[1])
 
         ret, thresholded = cv.threshold(combined, 0, 255, cv.THRESH_OTSU)
-        thresholded_with_discard = discards_low_intensity_pixels(combined)
+        #thresholded_with_discard = discards_low_intensity_pixels(combined)
 
         processed = self.morphological_close(thresholded)
         #processed_with_discard = self.morphological_close(thresholded_with_discard)
