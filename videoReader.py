@@ -5,7 +5,7 @@ import numpy as np
 
 class VideoReader:
     """
-    TODO
+    Opens a video capture from a given path and allows for getting video frames.
     """
 
     def __init__(self, video_path):
@@ -41,7 +41,7 @@ class VideoReader:
                 frame_array[i] = self.__get_frame_from_stream()
 
         # Reset reading from previous frame number
-        self.__stream.set(cv.CAP_PROP_POS_FRAMES, self.__current_frame_number)
+        self.set_stream_frame_pos(self.__current_frame_number)
 
         return frame_array
 
@@ -57,3 +57,10 @@ class VideoReader:
             logging.getLogger("Can't receive frame (stream end?). Exiting ...")
 
         return frame
+
+    def set_stream_frame_pos(self, stream_pos: int):
+        """
+        Sets the stream back to the specific frame 'stream_pos'
+        :param stream_pos: Number of the frame in the stream
+        """
+        self.__stream.set(cv.CAP_PROP_POS_FRAMES, stream_pos)
