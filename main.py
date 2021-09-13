@@ -44,6 +44,7 @@ def deflicker_test_method():
 
         deflicker.append_pixel_intensity_data(frame)
     deflicker.choose_pixels_to_follow()
+    video_reader.set_stream_frame_pos(0)
     print()
 
 
@@ -55,7 +56,7 @@ def main():
     # endregion gui
 
     deflicker_test_method()
-    return
+    # return
 
     preprocessor = Preprocessor()
     # detector = Detector
@@ -74,6 +75,7 @@ def main():
             # contoured_image = draw_contours(frame, preprocessed)
 
             grayscaled = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            print(grayscaled[0, 88])
             mean_intens = np.mean(grayscaled)
             cv2.putText(frame, str(mean_intens), (10, 500), font, 4, (255, 255, 255), 2, cv2.LINE_AA)
 

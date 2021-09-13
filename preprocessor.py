@@ -73,7 +73,8 @@ class Preprocessor:
 
     prev_deflicker = None
     def deflicker(self, frame: np.ndarray, strengthcutoff=20):
-        """Compares the corresponding pixels in the last two frames and
+        """
+        Compares the corresponding pixels in the last two frames and
         if their difference is below a given threshold, it adjusts the intensity of the
         given pixel in the current frame to be a closer match to the pixel in the previous frame,
         in essence removing some flickering noise.

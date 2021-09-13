@@ -51,7 +51,7 @@ class Deflicker:
         grayscaled = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
         for x, y in np.ndindex(grayscaled.shape):
-            self.pixel_intensity_values[x, y] = grayscaled[x, y]
+            self.pixel_intensity_values[x, y, self.num_frames_read] = grayscaled[x, y]
 
         self.num_frames_read += 1
 
@@ -87,9 +87,15 @@ class Deflicker:
 
         for image_segment in self.get_blocks(self.pixel_intensity_values):
             mean_intensity = self.__calculate_cumulative_mean_intensities(image_segment)
-            #mean_intensity = np.mean(image_segment).astype(np.uint8)  # mean intensity in the entire cumulative block
-            self.get_pixels_to_follow_in_block(mean_intensity)
-            # TODO look at pixel intensity changes for the given pixels in the block and derive the threshold value
+            low_pixel, mean_pixel, high_pixel = self.get_pixels_to_follow_in_block(mean_intensity)
+            print(low_pixel)
+            print(image_segment[low_pixel])
+            print(mean_pixel)
+            print(image_segment[mean_pixel])
+            print(high_pixel)
+            print(image_segment[high_pixel[0], high_pixel[1]])
+            break
+
 
     def get_pixels_to_follow_in_block(self, arr: np.ndarray):
         """
