@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from operator import itemgetter
 
 import cv2
 import numpy as np
@@ -15,23 +16,26 @@ from videoReader import VideoReader
 VIDEO_PATH = "resources/test/test_media_normal.mov"
 VIDEO_PATH1 = "resources/test/720p_solo.mov"
 VIDEO_PATH5 = "resources/test/480p_solo.mov"
-VIDEO_PATH3 = "resources/test/2players.mp4"
-VIDEO_PATH2 = "resources/test/rally.mp4"
+VIDEO_PATH2 = "resources/test/2players.mov"
+VIDEO_PATH3 = "resources/test/480pbh.mov"
 # endregion video paths
 
 video_reader = VideoReader(VIDEO_PATH5)
+preprocessor = Preprocessor()
+detector = Detector()
 
 
 def deflicker_test_method():
 
+    #region initialize
     initial_frame = next(video_reader.get_frame())
-
     if initial_frame is None:
         return
 
     frame_width = initial_frame.shape[0]
     frame_height = initial_frame.shape[1]
     num_frames_to_read = 30
+    #endregion initialize
 
     deflicker = Deflicker(frame_width, frame_height, num_frames_to_read)
     deflicker.append_pixel_intensity_data(initial_frame)
@@ -43,10 +47,10 @@ def deflicker_test_method():
             return
 
         deflicker.append_pixel_intensity_data(frame)
-    deflicker.choose_pixels_to_follow()
+    block_thresholds = deflicker.choose_pixels_to_follow()
     video_reader.set_stream_frame_pos(0)
-    print()
 
+    return block_thresholds
 
 def main():
     # region gui
@@ -55,38 +59,46 @@ def main():
     # print(g.file_path) # Debug
     # endregion gui
 
-    deflicker_test_method()
-    # return
+    width = int(video_reader.stream.get(cv.CAP_PROP_FRAME_WIDTH) + 0.5)
+    height = int(video_reader.stream.get(cv.CAP_PROP_FRAME_HEIGHT) + 0.5)
+    size = (width, height)
+    size = (720, 640)
+    print(size)
 
-    preprocessor = Preprocessor()
-    # detector = Detector
+    fourcc = cv.VideoWriter_fourcc(*'XVID')
+    # out2 = cv.VideoWriter('test5.avi', fourcc, 20.0, size)
 
-    font = cv2.FONT_HERSHEY_SIMPLEX
+    # block_thresholds = deflicker_test_method()
+    block_thresholds = None
 
+    frame_num = 0
     for frame in video_reader.get_frame():
 
         if frame is None:
             return
 
-        preprocessed = preprocessor.process(frame)
+        preprocessed = preprocessor.process(frame, block_thresholds)
 
         if preprocessed is not None:
 
-            # contoured_image = draw_contours(frame, preprocessed)
+            # detector.classify(preprocessed)
 
-            grayscaled = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-            print(grayscaled[0, 88])
-            mean_intens = np.mean(grayscaled)
-            cv2.putText(frame, str(mean_intens), (10, 500), font, 4, (255, 255, 255), 2, cv2.LINE_AA)
+            contoured_image = draw_contours(frame, preprocessed)
+            img = draw_grid(preprocessed)
 
-            cv.imshow('frame', frame)
-
-            # video.write(processed_without_discard)
+            # Convert grayscale image to 3-channel image,so that they can be stacked together
+            both = np.concatenate((contoured_image, img), axis=1)  # 1 : horz, 0 : Vert.
+            cv2.imshow('imgc', both)
 
             if cv.waitKey() == ord('q'):
                 break
 
-    # video.release()
+            # cv.waitKey(1)
+
+        frame_num += 1
+        print(f'frame number = {frame_num}')
+
+    # out2.release()
     cv.destroyAllWindows()
 
 
@@ -103,30 +115,27 @@ def blend(list_images):  # Blend images equally.
     return output
 
 
+
 def draw_contours(frame, preprocessed):
-    # RETR external doesn't store any contours within contours
-    cnt, hierarchy = cv.findContours(cv.Canny(preprocessed, 0, 1), cv2.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-    #
-    max_area = sys.maxsize
-    index = 0
-    i = 0
-    for c in cnt:
-        area = cv.contourArea(c)
-        if area < max_area:
-            index = i
-            max_area = area
-        i += 1
 
-    images = []
-    #
-    img = cv.drawContours(frame, cnt, index, (255, 0, 0), 15)
-    cnts = cv.drawContours(frame, cnt, -1, (0, 255, 0), 3)
-    #
-    images.append(img)
-    images.append(cnts)
-    newimg = blend(images)
+    new_rectangles = detector.join_contours(preprocessed)
 
-    return newimg
+    # max_area = sys.maxsize
+    min_area = sys.maxsize
+    for rect in new_rectangles:
+        x, y, w, h = rect
+        area = w * h
+        if area < min_area:
+            min_area = area
+
+    for rect in new_rectangles:
+        x, y, w, h = rect
+        if w * h == min_area:
+            img = cv2.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (121, 11, 189), 3)
+        else:
+            img = cv2.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 2)
+    # return blend(images)
+    return frame
 
 
 if __name__ == "__main__":

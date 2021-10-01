@@ -1,5 +1,6 @@
 import logging
 import math
+from matplotlib import pyplot as plt
 
 import numpy as np
 import cv2 as cv
@@ -22,7 +23,7 @@ import cv2 as cv
 # pass the information about regions and their thresholds to the deflicker-er
 
 # done.
-
+from utilities import *
 
 class Deflicker:
     """
@@ -35,6 +36,7 @@ class Deflicker:
 
         self.pixel_intensity_values = np.zeros((video_width, video_height, self.num_frames_max), dtype=np.uint8)
         self.added_pixel_intensity_values = np.zeros((video_width, video_height), dtype=np.uint32)
+        print("starting deflicker preprocessing ...")
 
     def append_pixel_intensity_data(self, frame: np.ndarray):
         """
@@ -54,7 +56,6 @@ class Deflicker:
             self.pixel_intensity_values[x, y, self.num_frames_read] = grayscaled[x, y]
 
         self.num_frames_read += 1
-
 
     def __calculate_cumulative_mean_intensities(self, array: np.ndarray):
         """
@@ -85,16 +86,59 @@ class Deflicker:
         #   3) look at how their intensities changed within the recorded period
         #   ==> derive threshold values from from changes in pixel intensity
 
-        for image_segment in self.get_blocks(self.pixel_intensity_values):
+        num_segments = 20
+        block_thresholds = np.empty(num_segments)
+        i = 0
+
+        for image_segment in get_blocks3D(self.pixel_intensity_values):
+
             mean_intensity = self.__calculate_cumulative_mean_intensities(image_segment)
             low_pixel, mean_pixel, high_pixel = self.get_pixels_to_follow_in_block(mean_intensity)
+            #region prints
             print(low_pixel)
             print(image_segment[low_pixel])
+
+            # data = image_segment[low_pixel]
+            # # newdata = np.squeeze(data)  # Shape is now: (10, 80)
+            # plt.plot(data)  # plotting by columns
+            # plt.show()
+
+            print(f'low pixel stdev = {image_segment[low_pixel].std()}')
+            print(f'mean pixel stdev = {image_segment[mean_pixel].std()}')
+            print(f'high pixel stdev = {image_segment[high_pixel].std()}')
+
+
+
             print(mean_pixel)
             print(image_segment[mean_pixel])
             print(high_pixel)
             print(image_segment[high_pixel[0], high_pixel[1]])
-            break
+            #endregion prints
+
+            max_change_low = int(max(image_segment[low_pixel]) - min(image_segment[low_pixel]))
+            max_change_mean = int(max(image_segment[mean_pixel]) - min(image_segment[mean_pixel]))
+            max_change_high = int(max(image_segment[high_pixel]) - min(image_segment[high_pixel]))
+            # print(f'max change low = {max_change_low}')
+            # print(f'max change mean = {max_change_mean}')
+            # print(f'max change high = {max_change_high}')
+
+            low_avg = np.mean(image_segment[low_pixel])
+            mean_avg = np.mean(image_segment[mean_pixel])
+            high_avg = np.mean(image_segment[high_pixel])
+
+            avg_of_avg = int((low_avg + mean_avg + high_avg) / 3)
+
+            avg_delta = int((max_change_low + max_change_mean + max_change_high ) / 3)
+            avg_stdev = int((image_segment[low_pixel].std() + image_segment[mean_pixel].std() + image_segment[high_pixel].std()) / 3)
+            # block_thresholds[i] = avg_delta
+            block_thresholds[i] = avg_stdev
+            # block_thresholds[i] = avg_of_avg
+            # block_thresholds[i] = min(low_avg, mean_avg, high_avg)
+            i += 1
+
+        print("deflicker preprocessing complete ...")
+        return block_thresholds
+
 
 
     def get_pixels_to_follow_in_block(self, arr: np.ndarray):
@@ -139,27 +183,11 @@ class Deflicker:
                 mean_pixel_index = (x, y)
                 approx_mean_pixel_intensity = intensity_value
 
-        print(f'mean = {mean_intensity}')
-        # print(f'min = {min}')
-        # print(f'max = {max}')
-        print(f'low pixel intensity: {arr[low_pixel_index]}')
-        print(f'mean pixel intensity: {arr[mean_pixel_index]}')
-        print(f'high pixel intensity: {arr[high_pixel_index]}')
+        # print(f'mean = {mean_intensity}')
+        # # print(f'min = {min}')
+        # # print(f'max = {max}')
+        # print(f'low pixel intensity: {arr[low_pixel_index]}')
+        # print(f'mean pixel intensity: {arr[mean_pixel_index]}')
+        # print(f'high pixel intensity: {arr[high_pixel_index]}')
 
         return low_pixel_index, mean_pixel_index, high_pixel_index
-
-    def get_blocks(self, arr, num_row_blocks=4, num_col_blocks=5):
-        """
-        :param arr: Array to partition into blocks
-        :return: Generates num_row_blocks * num_col_blocks equally-sized pieces of the array
-        """
-
-        height = arr.shape[0]
-        width = arr.shape[1]
-
-        stride_row = int(width / num_row_blocks)
-        stride_col = int(height / num_col_blocks)
-
-        for x in range(0, arr.shape[0], stride_col):
-            for y in range(0, arr.shape[1], stride_row):
-                yield arr[x:x + stride_col, y:y + stride_row, :]

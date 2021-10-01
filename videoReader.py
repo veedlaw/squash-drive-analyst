@@ -9,7 +9,7 @@ class VideoReader:
     """
 
     def __init__(self, video_path):
-        self.__stream = cv.VideoCapture(video_path)
+        self.stream = cv.VideoCapture(video_path)
         self.__current_frame_number = 0
 
     def get_frame(self):
@@ -18,11 +18,11 @@ class VideoReader:
         :param path: Path to video
         :return: Single frame from video
         """
-        while self.__stream.isOpened():
+        while self.stream.isOpened():
             frame = self.__get_frame_from_stream()
             yield frame
 
-        self.__stream.release()
+        self.stream.release()
 
     def get_N_frames(self, n):
         """
@@ -34,10 +34,10 @@ class VideoReader:
         frame_array = np.empty((n), np.ndarray)
 
         # stores the current frame the video capture is on
-        self.__current_frame_number = self.__stream.get(cv.CAP_PROP_FRAME_COUNT)
+        self.__current_frame_number = self.stream.get(cv.CAP_PROP_FRAME_COUNT)
 
         for i in range(n):
-            if self.__stream.isOpened():
+            if self.stream.isOpened():
                 frame_array[i] = self.__get_frame_from_stream()
 
         # Reset reading from previous frame number
@@ -51,7 +51,7 @@ class VideoReader:
         :return: Read frame, or None if read was unsuccessful
         """
         # .read() is a blocking operation, might want to do something about that in the future
-        successful_read, frame = self.__stream.read()
+        successful_read, frame = self.stream.read()
 
         if not successful_read:
             logging.getLogger("Can't receive frame (stream end?). Exiting ...")
@@ -63,4 +63,4 @@ class VideoReader:
         Sets the stream back to the specific frame 'stream_pos'
         :param stream_pos: Number of the frame in the stream
         """
-        self.__stream.set(cv.CAP_PROP_POS_FRAMES, stream_pos)
+        self.stream.set(cv.CAP_PROP_POS_FRAMES, stream_pos)
