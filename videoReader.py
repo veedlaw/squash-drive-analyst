@@ -8,23 +8,46 @@ class VideoReader:
     Opens a video capture from a given path and allows for getting video frames.
     """
 
-    def __init__(self, video_path):
+    def __init__(self, video_path: str):
         self.stream = cv.VideoCapture(video_path)
         self.__current_frame_number = 0
 
-    def get_frame(self):
+    def get_frame(self) -> np.ndarray:
         """
         Feeds video frames using a generator
-        :param path: Path to video
         :return: Single frame from video
         """
         while self.stream.isOpened():
             frame = self.__get_frame_from_stream()
-            yield frame
+
+            if frame is not None:
+                yield frame
+            else:
+                return
 
         self.stream.release()
 
-    def get_N_frames(self, n):
+    def __get_frame_from_stream(self) -> np.ndarray:
+        """
+        Returns a frame from the class' video stream.
+        :return: Read frame, or None if read was unsuccessful
+        """
+        # .read() is a blocking operation, might want to do something about that in the future
+        successful_read, frame = self.stream.read()
+
+        if not successful_read:
+            logging.getLogger("Can't receive frame (stream end?). Exiting ...")
+
+        return frame
+
+    def set_stream_frame_pos(self, stream_pos: int) -> None:
+        """
+        Sets the stream back to the specific frame 'stream_pos'
+        :param stream_pos: Number of the frame in the stream
+        """
+        self.stream.set(cv.CAP_PROP_POS_FRAMES, stream_pos)
+
+    def get_N_frames(self, n: int) -> np.ndarray:
         """
         Gets N frames from the video stream.
         After reading n frames returns the reading position to it's previous position. (frame_count - n)
@@ -44,23 +67,3 @@ class VideoReader:
         self.set_stream_frame_pos(self.__current_frame_number)
 
         return frame_array
-
-    def __get_frame_from_stream(self):
-        """
-        Returns a frame from the class' video stream.
-        :return: Read frame, or None if read was unsuccessful
-        """
-        # .read() is a blocking operation, might want to do something about that in the future
-        successful_read, frame = self.stream.read()
-
-        if not successful_read:
-            logging.getLogger("Can't receive frame (stream end?). Exiting ...")
-
-        return frame
-
-    def set_stream_frame_pos(self, stream_pos: int):
-        """
-        Sets the stream back to the specific frame 'stream_pos'
-        :param stream_pos: Number of the frame in the stream
-        """
-        self.stream.set(cv.CAP_PROP_POS_FRAMES, stream_pos)

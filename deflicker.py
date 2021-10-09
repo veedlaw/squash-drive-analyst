@@ -1,33 +1,27 @@
 import logging
-import math
-from matplotlib import pyplot as plt
 
 import numpy as np
-import cv2 as cv
 
-
-# goal: get local threshold values for subregions of the image for the deflicker method in the preprocessor
-
-# get a ~60 frames spanning histogram for each pixel
-
-# pick some N pixels such that:
-#   some have a relatively low mean
-#                          medium mean
-#                          high mean
-
-# consider how the intensities of picked pixels changes
-#   threshold value is derived from the above
-
-# divide the image into some subregions
-
-# pass the information about regions and their thresholds to the deflicker-er
-
-# done.
 from utilities import *
+
 
 class Deflicker:
     """
     Contains methods for deriving appropriate local thresholds for de-flickering.
+    Goal: get local threshold values for subregions of the image for the deflicker method in the preprocessor
+
+
+    The process of de-flickering follows roughly the following steps:
+        1. Get a ~60 frames spanning histogram for each pixel
+        2. pick some N pixels such that:
+                some have a relatively  low mean
+                                        medium mean
+                                        high mean
+
+        3. consider how the intensities of picked pixels changes
+        4. threshold value is derived from the above
+        5. divide the image into some subregions
+        6. pass the information about regions and their thresholds to the deflicker-er
     """
 
     def __init__(self, video_width, video_height, number_of_incoming_frames=60):
@@ -59,7 +53,7 @@ class Deflicker:
 
     def __calculate_cumulative_mean_intensities(self, array: np.ndarray):
         """
-        Calculates the cumulative mean intensity for each pixel in the given array
+        Calculates the cumulative mean intensity for each pixel in the given array.
         :return: Array where each element represents the cumulative intensity of the pixel throughout the given frames.
         """
 
@@ -68,7 +62,7 @@ class Deflicker:
 
         for x, y, in np.ndindex((num_rows, num_cols)):
             cumulative_mean_intensities[x, y] = np.mean(array[x, y])
-            # print(f'cumulative_intensities[{x}, {y}] = {cumulative_mean_intensities[x,y]}')
+
         return cumulative_mean_intensities
 
     def choose_pixels_to_follow(self):
@@ -91,10 +85,9 @@ class Deflicker:
         i = 0
 
         for image_segment in get_blocks3D(self.pixel_intensity_values):
-
             mean_intensity = self.__calculate_cumulative_mean_intensities(image_segment)
             low_pixel, mean_pixel, high_pixel = self.get_pixels_to_follow_in_block(mean_intensity)
-            #region prints
+            # region prints
             print(low_pixel)
             print(image_segment[low_pixel])
 
@@ -107,13 +100,11 @@ class Deflicker:
             print(f'mean pixel stdev = {image_segment[mean_pixel].std()}')
             print(f'high pixel stdev = {image_segment[high_pixel].std()}')
 
-
-
             print(mean_pixel)
             print(image_segment[mean_pixel])
             print(high_pixel)
             print(image_segment[high_pixel[0], high_pixel[1]])
-            #endregion prints
+            # endregion prints
 
             max_change_low = int(max(image_segment[low_pixel]) - min(image_segment[low_pixel]))
             max_change_mean = int(max(image_segment[mean_pixel]) - min(image_segment[mean_pixel]))
@@ -128,8 +119,9 @@ class Deflicker:
 
             avg_of_avg = int((low_avg + mean_avg + high_avg) / 3)
 
-            avg_delta = int((max_change_low + max_change_mean + max_change_high ) / 3)
-            avg_stdev = int((image_segment[low_pixel].std() + image_segment[mean_pixel].std() + image_segment[high_pixel].std()) / 3)
+            avg_delta = int((max_change_low + max_change_mean + max_change_high) / 3)
+            avg_stdev = int((image_segment[low_pixel].std() + image_segment[mean_pixel].std() + image_segment[
+                high_pixel].std()) / 3)
             # block_thresholds[i] = avg_delta
             block_thresholds[i] = avg_stdev
             # block_thresholds[i] = avg_of_avg
@@ -138,8 +130,6 @@ class Deflicker:
 
         print("deflicker preprocessing complete ...")
         return block_thresholds
-
-
 
     def get_pixels_to_follow_in_block(self, arr: np.ndarray):
         """
@@ -153,8 +143,6 @@ class Deflicker:
             2) Intensity closest matches mean_intensity
             3) Intensity closest matches mean_intensity * 1.25
         """
-        # min = math.inf
-        # max = -math.inf
 
         mean_intensity = np.mean(arr).astype(np.uint8)  # mean intensity in the entire array
         ideal_low_value = mean_intensity * 0.75
