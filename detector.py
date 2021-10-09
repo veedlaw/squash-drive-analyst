@@ -6,7 +6,6 @@ import numpy as np
 
 class Detector:
 
-
     def classify(self, frame):
         """
         :param frame: a preprocessed image
@@ -16,15 +15,15 @@ class Detector:
         player_candidates = []
         ball_candidates = []
 
-        cleaned_contours = self.join_contours(frame)
+        cleaned_contours = self.__join_contours(frame)
 
-        #TODO
+        # TODO
 
         return cleaned_contours
 
     def __join_contours(self, frame: np.ndarray) -> list:
         """"
-        :param frame: a preprocessed frame
+        :param frame: A preprocessed frame
 
         The method will receive a preprocessed image, which is likely to contain many contours due to the nature of
         the image segmentation process.
@@ -33,12 +32,13 @@ class Detector:
 
         A heuristic to determine the ball contour is that the ball contour is mostly farther away from the player's body
         than the noisy segmentation of the player. Therefore, we will join all contours that are close to each other
-        into one big bounding box.
+        into one box.
 
         The result should ideally be one large and one small bounding box, that is, the player- and ball candidate
         respectively.
         """
 
+        # Obtain all contours from the image
         contours, _ = cv.findContours(cv.Canny(frame, 0, 1), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
         bounding_boxes = []
@@ -48,33 +48,31 @@ class Detector:
         # Sort the bounding boxes according to their x-coordinate in increasing order
         bounding_boxes.sort(key=itemgetter(0))
 
-        # New bounding boxes where close bounding boxes have been joined
-        bounding_boxes = self.join_nearby_bounding_boxes(bounding_boxes)
+        bounding_boxes = self.__join_nearby_bounding_boxes(bounding_boxes)
 
         return bounding_boxes
 
-     
-    def __join_nearby_bounding_boxes(self, bounding_boxes):
+    def __join_nearby_bounding_boxes(self, bounding_boxes) -> list:
         """
-        :param rectangles: Sorted list of rectangles (4-tuple (top-left x, top-left y, width, height))
+        :param bounding_boxes: Sorted list of bounding_boxes(rectangles) (4-tuple (top-left x, top-left y, width, height))
         :return: List of rectangles
 
         Many thanks to user HansHirse on StackOverflow.
         """
 
         join_distance = 5
-        processed = [False] * len(bounding_boxes) 
+        processed = [False] * len(bounding_boxes)
         new_bounds = []
 
         for i, rect1 in enumerate(bounding_boxes):
             if not processed[i]:
-                
+
                 processed[i] = True
-                current_x_min, current_y_min, current_x_max, current_y_max = self.get_rectangle_contours(rect1)
+                current_x_min, current_y_min, current_x_max, current_y_max = self.__get_rectangle_contours(rect1)
 
                 for j, rect2 in enumerate(bounding_boxes[(i + 1):], start=(i + 1)):
-                    
-                    candxMin, candyMin, candxMax, candyMax = self.get_rectangle_contours(rect2)
+
+                    candxMin, candyMin, candxMax, candyMax = self.__get_rectangle_contours(rect2)
 
                     if (candxMin <= current_x_max + join_distance):
                         processed[j] = True
@@ -86,11 +84,10 @@ class Detector:
                         current_y_max = max(current_y_max, candyMax)
                     else:
                         break
-                new_bounds.append([current_x_min, current_y_min, 
-                    current_x_max - current_x_min, current_y_max - current_y_min])
+                new_bounds.append([current_x_min, current_y_min,
+                                   current_x_max - current_x_min, current_y_max - current_y_min])
 
         return new_bounds
-
 
     def __get_rectangle_contours(self, rectangle: list) -> list:
         """
@@ -102,6 +99,6 @@ class Detector:
         """
         x_min, y_min, width, height = rectangle
         x_max = x_min + width
-        y_max = y_min + height        
+        y_max = y_min + height
 
         return [x_min, y_min, x_max, y_max]
