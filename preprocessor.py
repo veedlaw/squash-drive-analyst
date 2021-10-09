@@ -3,8 +3,6 @@ import numpy as np
 from collections import deque
 from utilities import *
 
-from matplotlib import pyplot as plt
-
 
 class Preprocessor:
     """
@@ -26,18 +24,26 @@ class Preprocessor:
     """
 
     def __init__(self):
-        # deque is convenient, as once at max capacity, it auto-discards the last frame after adding a new one
+        # deque is convenient, as once at max capacity, it auto-discards the last frame before adding a new one
         self.frame_buffer = deque(maxlen=3)  # contains smoothed grayscale images, used as a "sliding window"
         self.frame_difference_buffer = deque(maxlen=2)  # contains differenced images, used as a "sliding window"
         self.dilation_kernel = np.ones((3, 3), np.uint8)
         self.prev_deflicker = None
 
-    def process(self, frame, block_thresholds):
+    def ready(self) -> bool:
         """
-        Uses a sliding window approach
-        :return: A binary image that differentiates moving parts of the image from static parts from 3 last video frames
+        The preprocessor is ready when the frame buffer is filled.
+        :return: True if the buffer has accumulated enough frames to start preprocessing.
         """
-        grayscaled = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        return len(self.frame_buffer) == self.frame_buffer.maxlen
+
+    def add_to_frame_buffer(self, frame: np.ndarray) -> None:
+        """
+        Prepares the frame and adds it to the frame buffer.
+
+        :param frame: A video frame.
+        """
+        frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
         # 1000 -> allow for change always
         # low -> make changing intensity harder
@@ -46,23 +52,33 @@ class Preprocessor:
         #                     1000, 8,    8,    8,
         #                     1000, 8,    8,    8,
         #                     1000, 1000, 1000, 8]
-
         # deflickered = self.deflicker2(grayscaled, block_thresholds)
         # if deflickered is not None:
         #     grayscaled = deflickered
 
-        deflickered = self.deflicker(grayscaled)
-        if deflickered is not None:
+        if self.prev_deflicker is None:
+            self.prev_deflicker = frame
+        else:
+            deflickered = self.__deflicker(frame)
             grayscaled = deflickered
 
-        smoothed = cv.GaussianBlur(grayscaled, (5, 5), 0)
+        frame = cv.GaussianBlur(frame, (5, 5), 0)
 
-        self.frame_buffer.append(smoothed)
+        self.frame_buffer.append(frame)
 
         if len(self.frame_buffer) < 3:  # Reading initial frames
             if len(self.frame_buffer) == 2:  # We need two frames to start frame differencing
                 self.frame_difference_buffer.append(cv.absdiff(self.frame_buffer[0], self.frame_buffer[1]))
-            return None
+
+    def process(self, frame: np.ndarray, block_thresholds: list) -> np.ndarray:
+        """
+        Uses a sliding window approach in the frame buffer for differentiating moving parts of the image from static
+        parts.
+
+        Frames are received via the 'frame' parameter and after a few cleaning operations are added to the buffer.
+
+        :return: A binary image that has differentiated moving parts of the image from static parts.
+        """
 
         # Apply frame differencing to the last two frames
         difference = cv.absdiff(self.frame_buffer[1], self.frame_buffer[2])
@@ -72,22 +88,24 @@ class Preprocessor:
         combined = cv.bitwise_and(self.frame_difference_buffer[0], self.frame_difference_buffer[1])
 
         ret, thresholded = cv.threshold(combined, 0, 255, cv.THRESH_OTSU)
-        # thresholded_with_discard = discards_low_intensity_pixels(combined)
 
-        processed = self.morphological_close(thresholded)
+        processed = self.__morphological_close(thresholded, 13)
 
-        # show_histogram(combined, processed)
         return processed
 
-    def morphological_close(self, image):
-        # Morphological closing: dilation -> erosion
-        dilated = cv.dilate(image, self.dilation_kernel, iterations=13)
+    def __morphological_close(self, image: np.ndarray, iterations: int) -> np.ndarray:
+        """
+        Returns the morphological closing (dilation followed by erosion) of the image.
+
+        :param image: Image to apply the operation on.
+        :return: The morphological closing of the image
+        """
+
+        dilated = cv.dilate(image, self.dilation_kernel, iterations=iterations)
         processed = cv.erode(dilated, self.dilation_kernel)
         return processed
 
-    prev_deflicker = None
-
-    def deflicker(self, frame: np.ndarray, strengthcutoff=16):
+    def __deflicker(self, frame: np.ndarray, strengthcutoff=16) -> np.ndarray:
         """
         Compares the corresponding pixels in the last two frames and
         if their difference is below a given threshold, it adjusts the intensity of the
@@ -96,32 +114,28 @@ class Preprocessor:
         :return: Frame with adjusted intensities
         """
 
-        if self.prev_deflicker is None:
-            self.prev_deflicker = frame
-            return
-
         for row in range(len(frame)):
             for col in range(len(frame[row])):
-                    # print(f'i = {i}; row = {row}; col = {col}')
 
-                    prev_intensity = self.prev_deflicker[row, col]
-                    curr_intensity = frame[row, col]
+                prev_intensity = self.prev_deflicker[row, col]
+                curr_intensity = frame[row, col]
 
-                    strength = abs(int(curr_intensity) - int(prev_intensity))
-                    # print(f'strength = abs({curr_intensity} - {prev_intensity}) = {strength}')
+                strength = abs(int(curr_intensity) - int(prev_intensity))
+                # print(f'Strength = abs({curr_intensity} - {prev_intensity}) = {strength}')
 
-                    # the strength of the stimulus must be greater than a certain point, else we do not want to allow the
-                    # change
-                    if strength < strengthcutoff:
-                        # print(f'cutoff met: {strength} < {strengthcutoff}')
-                        if curr_intensity > prev_intensity:
-                            frame[row, col] = prev_intensity + 1
-                        else:
-                            frame[row, col] = prev_intensity - 1
+                # the strength of the stimulus must be greater than a certain point, else we do not want to allow
+                # the change
+                if strength < strengthcutoff:
+                    # print(f'Cutoff met: {strength} < {strengthcutoff}')
+                    if curr_intensity > prev_intensity:
+                        frame[row, col] = prev_intensity + 1
+                    else:
+                        frame[row, col] = prev_intensity - 1
+
         self.prev_deflicker = np.copy(frame)
         return frame
 
-    def deflicker2(self, frame: np.ndarray, block_threshold):
+    def deflicker2(self, frame: np.ndarray, block_threshold) -> np.ndarray:
         """
         Compares the corresponding pixels in the last two frames and
         if their difference is below a given threshold, it adjusts the intensity of the
@@ -173,12 +187,3 @@ class Preprocessor:
         # self.prev_deflicker = np.copy(frame)
         self.prev_deflicker = frame
         return frame
-
-def show_histogram(img, processed_img):
-    """Debugging function that shows plotted histogram of two images."""
-    hist_full = cv.calcHist([img], [0], None, [255], [0, 255])
-    plt.subplot(221), plt.imshow(img, 'gray')
-    plt.subplot(222), plt.imshow(processed_img, 'gray')
-    plt.subplot(223), plt.plot(hist_full)
-    plt.xlim([0, 255])
-    plt.show()
