@@ -1,7 +1,10 @@
+import timeit
+
 import cv2 as cv
 import numpy as np
 from collections import deque
 from utilities import *
+from timeit import default_timer as timer
 
 
 class Preprocessor:
@@ -43,7 +46,11 @@ class Preprocessor:
 
         :param frame: A video frame.
         """
+        start = timer()
+
         frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        end = timer()
+        # print(f"grayscaling took {end - start}s")
 
         # 1000 -> allow for change always
         # low -> make changing intensity harder
@@ -56,19 +63,28 @@ class Preprocessor:
         # if deflickered is not None:
         #     grayscaled = deflickered
 
+        start = timer()
         if self.prev_deflicker is None:
             self.prev_deflicker = frame
         else:
             deflickered = self.__deflicker(frame)
             grayscaled = deflickered
 
+        end = timer()
+        # print(f"deflickering took {end - start}s")
+
+        start = timer()
         frame = cv.GaussianBlur(frame, (5, 5), 0)
+        end = timer()
+        # print(f"gaussian blur took {end - start}s")
 
         self.frame_buffer.append(frame)
 
         if len(self.frame_buffer) < 3:  # Reading initial frames
             if len(self.frame_buffer) == 2:  # We need two frames to start frame differencing
                 self.frame_difference_buffer.append(cv.absdiff(self.frame_buffer[0], self.frame_buffer[1]))
+
+
 
     def process(self, frame: np.ndarray, block_thresholds: list) -> np.ndarray:
         """
@@ -80,16 +96,28 @@ class Preprocessor:
         :return: A binary image that has differentiated moving parts of the image from static parts.
         """
 
+        start = timer()
         # Apply frame differencing to the last two frames
         difference = cv.absdiff(self.frame_buffer[1], self.frame_buffer[2])
+        end = timer()
+        # print(f"Frame differencing took {end - start}s")
         self.frame_difference_buffer.append(difference)
 
         # Combine with boolean "AND"
+        start = timer()
         combined = cv.bitwise_and(self.frame_difference_buffer[0], self.frame_difference_buffer[1])
+        end = timer()
+        # print(f"Frame combining took {end - start}s")
 
+        start = timer()
         ret, thresholded = cv.threshold(combined, 0, 255, cv.THRESH_OTSU)
+        end = timer()
+        # print(f"thresholding took {end - start}s")
 
+        start = timer()
         processed = self.__morphological_close(thresholded, 13)
+        end = timer()
+        # print(f"Morphological closing took {end - start}s")
 
         return processed
 
@@ -114,6 +142,7 @@ class Preprocessor:
         :return: Frame with adjusted intensities
         """
 
+        start = timer()
         for row in range(len(frame)):
             for col in range(len(frame[row])):
 
@@ -132,7 +161,13 @@ class Preprocessor:
                     else:
                         frame[row, col] = prev_intensity - 1
 
+        end = timer()
+        # print(f"Deflicker looping took {end - start}s")
+
+        start = timer()
         self.prev_deflicker = np.copy(frame)
+        end = timer()
+        # print(f"deep copy took {end - start}s")
         return frame
 
     def deflicker2(self, frame: np.ndarray, block_threshold) -> np.ndarray:

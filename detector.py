@@ -1,5 +1,7 @@
 from __future__ import print_function
-from operator import itemgetter, le
+from operator import itemgetter
+
+import cv2
 import cv2 as cv
 import numpy as np
 
@@ -8,7 +10,7 @@ class Detector:
 
     def classify(self, frame):
         """
-        :param frame: a preprocessed image
+        :param frame: A preprocessed image
         :return:
         """
 
@@ -16,8 +18,8 @@ class Detector:
         ball_candidates = []
 
         cleaned_contours = self.__join_contours(frame)
-
-        # TODO
+        # min_contour = min(cleaned_contours, key=rect_area)
+        # print(f'min contour: {min_contour}')
 
         return cleaned_contours
 
@@ -74,7 +76,7 @@ class Detector:
 
                     candxMin, candyMin, candxMax, candyMax = self.__get_rectangle_contours(rect2)
 
-                    if (candxMin <= current_x_max + join_distance):
+                    if candxMin <= current_x_max + join_distance:
                         processed[j] = True
 
                         # Reset coordinates of current rect
@@ -102,3 +104,4 @@ class Detector:
         y_max = y_min + height
 
         return [x_min, y_min, x_max, y_max]
+
