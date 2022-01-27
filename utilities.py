@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 import deflicker
 
-
 def get_blocks3D(arr, num_row_blocks=4, num_col_blocks=5):
     """
     :param arr: 3D Array to partition into blocks

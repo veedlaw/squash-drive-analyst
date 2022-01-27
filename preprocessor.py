@@ -52,17 +52,6 @@ class Preprocessor:
         end = timer()
         # print(f"grayscaling took {end - start}s")
 
-        # 1000 -> allow for change always
-        # low -> make changing intensity harder
-        # block_thresholds = [1000, 1000, 1000, 8,
-        #                     1000, 1000, 1000, 8,
-        #                     1000, 8,    8,    8,
-        #                     1000, 8,    8,    8,
-        #                     1000, 1000, 1000, 8]
-        # deflickered = self.deflicker2(grayscaled, block_thresholds)
-        # if deflickered is not None:
-        #     grayscaled = deflickered
-
         start = timer()
         if self.prev_deflicker is None:
             self.prev_deflicker = frame
@@ -84,9 +73,7 @@ class Preprocessor:
             if len(self.frame_buffer) == 2:  # We need two frames to start frame differencing
                 self.frame_difference_buffer.append(cv.absdiff(self.frame_buffer[0], self.frame_buffer[1]))
 
-
-
-    def process(self, frame: np.ndarray, block_thresholds: list) -> np.ndarray:
+    def process(self, frame: np.ndarray) -> np.ndarray:
         """
         Uses a sliding window approach in the frame buffer for differentiating moving parts of the image from static
         parts.
@@ -133,7 +120,7 @@ class Preprocessor:
         processed = cv.erode(dilated, self.dilation_kernel)
         return processed
 
-    def __deflicker(self, frame: np.ndarray, strengthcutoff=16) -> np.ndarray:
+    def __deflicker(self, current_frame: np.ndarray, strengthcutoff=16) -> np.ndarray:
         """
         Compares the corresponding pixels in the last two frames and
         if their difference is below a given threshold, it adjusts the intensity of the
@@ -143,82 +130,13 @@ class Preprocessor:
         """
 
         start = timer()
-        for row in range(len(frame)):
-            for col in range(len(frame[row])):
-
-                prev_intensity = self.prev_deflicker[row, col]
-                curr_intensity = frame[row, col]
-
-                strength = abs(int(curr_intensity) - int(prev_intensity))
-                # print(f'Strength = abs({curr_intensity} - {prev_intensity}) = {strength}')
-
-                # the strength of the stimulus must be greater than a certain point, else we do not want to allow
-                # the change
-                if strength < strengthcutoff:
-                    # print(f'Cutoff met: {strength} < {strengthcutoff}')
-                    if curr_intensity > prev_intensity:
-                        frame[row, col] = prev_intensity + 1
-                    else:
-                        frame[row, col] = prev_intensity - 1
-
+        strength_change_mask = np.abs(current_frame.astype(np.int16) - self.prev_deflicker) < strengthcutoff
+        current_frame[strength_change_mask] = self.prev_deflicker[strength_change_mask] + \
+                                              np.where(np.greater(current_frame[strength_change_mask],
+                                                                  self.prev_deflicker[strength_change_mask]), 1, -1)
         end = timer()
-        # print(f"Deflicker looping took {end - start}s")
+        print(f"Deflicker took {end - start}s")
 
-        start = timer()
-        self.prev_deflicker = np.copy(frame)
-        end = timer()
-        # print(f"deep copy took {end - start}s")
-        return frame
+        self.prev_deflicker = np.copy(current_frame)
 
-    def deflicker2(self, frame: np.ndarray, block_threshold) -> np.ndarray:
-        """
-        Compares the corresponding pixels in the last two frames and
-        if their difference is below a given threshold, it adjusts the intensity of the
-        given pixel in the current frame to be a closer match to the pixel in the previous frame,
-        in essence removing some flickering noise.
-        :return: Frame with adjusted intensities
-        """
-
-        if self.prev_deflicker is None:
-            self.prev_deflicker = frame
-            return
-
-        row = 0
-        col = 0
-        i = 0
-        for image_segment in get_blocks2D(frame):
-            width, height = frame.shape[1], frame.shape[0]
-            stride_row = int(width / 4)  # magic number TODO
-            stride_col = int(height / 5)  # magic number TODO
-
-            if row != 0 and row % 4 == 0:
-                row = 0
-                col += 1
-
-            strengthcutoff = block_threshold[i]
-
-            for x in range(stride_col):
-                x += col * stride_col
-                for y in range(stride_row):
-                    # print(f'row = {row}; col = {col}; x = {x}; y = {y}')
-                    y += row * stride_row
-
-                    prev_intensity = self.prev_deflicker[x, y]
-                    curr_intensity = frame[x, y]
-
-                    strength = abs(int(curr_intensity) - int(prev_intensity))
-                    # print(f'strength = abs({curr_intensity} - {prev_intensity}) = {strength}')
-
-                    # the strength of the stimulus must be greater than a certain point, else we do not want to allow the
-                    # change
-                    if strength < strengthcutoff:
-                        # print(f'cutoff met: {strength} < {strengthcutoff}')
-                        if curr_intensity > prev_intensity:
-                            frame[x, y] = prev_intensity + 1
-                        elif curr_intensity < prev_intensity:
-                            frame[x, y] = prev_intensity - 1
-            row += 1
-            i += 1
-        # self.prev_deflicker = np.copy(frame)
-        self.prev_deflicker = frame
-        return frame
+        return current_frame
