@@ -1,7 +1,6 @@
 from __future__ import print_function
 from operator import itemgetter
 
-import cv2
 import cv2 as cv
 import numpy as np
 
