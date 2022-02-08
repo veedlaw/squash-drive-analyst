@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 import deflicker
 
-
 def get_blocks3D(arr, num_row_blocks=4, num_col_blocks=5):
     """
     :param arr: 3D Array to partition into blocks
@@ -137,3 +136,12 @@ def draw_contours(frame, preprocessed, detector):
             img = cv.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 2)
     # return blend(images)
     return frame
+
+
+def rect_area(rect):
+    x, y, width, height = rect
+    return x * width + y * height
+
+def rect_center(rect):
+    x, y, width, height = rect
+    return None
