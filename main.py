@@ -7,6 +7,7 @@ from Gui import *
 from deflicker import Deflicker
 
 from detector import Detector
+from estimator import Estimator
 from preprocessor import *
 from videoReader import VideoReader
 
@@ -21,6 +22,9 @@ VIDEO_PATH3 = "resources/test/short.mov"
 video_reader = VideoReader(VIDEO_PATH5)
 preprocessor = Preprocessor()
 detector = Detector()
+estimator = Estimator()
+
+ball_position_buffer = deque(maxlen=2)
 
 
 def main():
@@ -32,32 +36,49 @@ def main():
     width = int(video_reader.stream.get(cv.CAP_PROP_FRAME_WIDTH) + 0.5)
     height = int(video_reader.stream.get(cv.CAP_PROP_FRAME_HEIGHT) + 0.5)
 
-    size = (height * 2, width * 2) # *2 for adding images side by side
+    size = (height * 2, width * 2)  # *2 for adding images side by side
     fourcc = cv.VideoWriter_fourcc(*'XVID')
     # out2 = cv.VideoWriter('test5.avi', fourcc, 20.0, size)
 
-    # block_thresholds = utilities.get_deflicker_parameters()
-    block_thresholds = None
-
-    frame_num = 0
     for frame in video_reader.get_frame():
         preprocessor.add_to_frame_buffer(frame)
 
         if preprocessor.ready():
-            preprocessed = preprocessor.process(frame, block_thresholds)
+            preprocessed = preprocessor.process(frame)
+            cleaned_contours = detector.classify(preprocessed)
+
+            # TODO currently is min_contour, but should be ball candidate
+            min_contour = min(cleaned_contours, key=rect_area)
+            ball_position_buffer.append(min_contour)
+
+            prediction = None
+
+            if rect_area(min_contour) < 30000:
+                estimator.add_data(min_contour)
+            else:
+                prediction = estimator.predict(t=0.25)
+                estimator.add_data(prediction)
+            # If estimator has not been initialized, it returns nonsense.
+            if not estimator.initialize_estimator():
+                prediction = None
 
             contoured_image = draw_contours(frame, preprocessed, detector)
             img = draw_grid(preprocessed)
+            if prediction is not None:
+                contoured_image = cv.rectangle(contoured_image, (int(prediction[0]), int(prediction[1])),
+                                               (int(prediction[0] + prediction[2]), int(prediction[1] + prediction[3])),
+                                               (0, 255, 255), thickness=3)
+                img = cv.rectangle(img, (int(prediction[0]), int(prediction[1])),
+                                   (int(prediction[0] + prediction[2]), int(prediction[1] + prediction[3])),
+                                   (0, 255, 255), thickness=3)
 
             # Convert grayscale image to 3-channel image,so that they can be stacked together
             both = np.concatenate((contoured_image, img), axis=1)  # 1 : horz, 0 : Vert.
             cv2.imshow('imgc', both)
 
-            if cv.waitKey() == ord('q'):
-                break
-
-        frame_num += 1
-        print(f'frame number = {frame_num}')
+            # if cv.waitKey() == ord('q'):
+            #     break
+            cv.waitKey(1)
 
     # out2.release()
     cv.destroyAllWindows()
