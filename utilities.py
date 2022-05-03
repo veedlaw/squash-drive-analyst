@@ -4,45 +4,6 @@ import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
 
-import deflicker
-
-def get_blocks3D(arr, num_row_blocks=4, num_col_blocks=5):
-    """
-    :param arr: 3D Array to partition into blocks
-    :param num_row_blocks: Number of blocks to generate from a row
-    :param num_col_blocks: Number of blocks to generate from a column
-    :return: Generates num_row_blocks * num_col_blocks equally-sized pieces of the array
-    """
-
-    height = arr.shape[0]
-    width = arr.shape[1]
-
-    stride_row = int(width / num_row_blocks)
-    stride_col = int(height / num_col_blocks)
-
-    for x in range(0, arr.shape[0], stride_col):
-        for y in range(0, arr.shape[1], stride_row):
-            yield arr[x:x + stride_col, y:y + stride_row, :]
-
-
-def get_blocks2D(arr, num_row_blocks=4, num_col_blocks=5):
-    """
-    :param arr: Array to partition into blocks
-    :param num_row_blocks: Number of blocks to generate from a row
-    :param num_col_blocks: Number of blocks to generate from a column
-    :return: Generates num_row_blocks * num_col_blocks equally-sized pieces of the array
-    """
-
-    height = arr.shape[0]
-    width = arr.shape[1]
-
-    stride_row = int(width / num_row_blocks)
-    stride_col = int(height / num_col_blocks)
-
-    for x in range(0, arr.shape[0], stride_col):
-        for y in range(0, arr.shape[1], stride_row):
-            yield arr[x:x + stride_col, y:y + stride_row]
-
 
 def draw_grid(img, line_color=(0, 255, 0), thickness=1, type_=4, pxstep=90, pystep=128):
     """
@@ -75,33 +36,6 @@ def show_histogram(img, processed_img):
     plt.subplot(223), plt.plot(hist_full)
     plt.xlim([0, 255])
     plt.show()
-
-
-def get_deflicker_parameters(video_reader):
-    # region initialize
-    initial_frame = next(video_reader.get_frame())
-    if initial_frame is None:
-        return
-
-    frame_width = initial_frame.shape[0]
-    frame_height = initial_frame.shape[1]
-    num_frames_to_read = 30
-    # endregion initialize
-
-    deflickerer = deflicker.Deflicker(frame_width, frame_height, num_frames_to_read)
-    deflickerer.append_pixel_intensity_data(initial_frame)
-
-    for i in range(num_frames_to_read):
-        frame = next(video_reader.get_frame())
-
-        if frame is None:
-            return
-
-        deflicker.append_pixel_intensity_data(frame)
-    block_thresholds = deflicker.choose_pixels_to_follow()
-    video_reader.set_stream_frame_pos(0)
-
-    return block_thresholds
 
 
 def blend(list_images):  # Blend images equally.
