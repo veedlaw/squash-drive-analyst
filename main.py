@@ -21,10 +21,18 @@ VIDEO_PATH3 = "resources/test/short.mov"
 
 video_reader = VideoReader(VIDEO_PATH5)
 preprocessor = Preprocessor()
+estimator = Estimator()
 detector = Detector()
 estimator = Estimator()
 
 ball_position_buffer = deque(maxlen=2)
+
+
+def initialize_preprocessor():
+    for frame in video_reader.get_frame():
+        if preprocessor.ready():
+            return
+        preprocessor.add_to_frame_buffer(frame)
 
 
 def main():
@@ -33,8 +41,9 @@ def main():
     # g.create_and_show_GUI()
     # endregion gui
 
-    width = int(video_reader.stream.get(cv.CAP_PROP_FRAME_WIDTH) + 0.5)
-    height = int(video_reader.stream.get(cv.CAP_PROP_FRAME_HEIGHT) + 0.5)
+    initialize_preprocessor()
+    estimator.initalize([0, 0, 0, 0], [0, 0, 0, 0])  # Initially no data about the ball, so initialize with 0-s
+
 
     size = (height * 2, width * 2)  # *2 for adding images side by side
     fourcc = cv.VideoWriter_fourcc(*'XVID')

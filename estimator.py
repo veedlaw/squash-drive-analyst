@@ -15,8 +15,8 @@ class Estimator:
     def __init__(self):
         """This only creates the estimator object.
         """
-        self.data_smoothing_factor = 0.99  # 0 <= data_smoothing_factor <= 1
-        self.trend_smoothing_factor = 0.01  # 0 <= trend_smoothing_factor <= 1
+        self.data_smoothing_factor = 0.8  # 0 <= data_smoothing_factor <= 1
+        self.trend_smoothing_factor = 0.2  # 0 <= trend_smoothing_factor <= 1
 
         self.position_buffer = deque(maxlen=2)
         self.previous_smoothed = None
@@ -24,10 +24,10 @@ class Estimator:
 
         self.initialized_for_forecasting = False
 
-    def initialize_estimator(self) -> bool:
+    def initalize(self, inital_pos, next_pos) -> bool:
         """Initializes the estimator for forecasting.
-        :param initial_position: Initial position of Rectangle [top-left x, top-left y, width, height].
-        :param next_position: Next position of Rectangle [top-left x, top-left y, width, height].
+        :param initial_pos: Initial position of Rectangle [top-left x, top-left y, width, height].
+        :param next_pos: Next position of Rectangle [top-left x, top-left y, width, height].
         :return: A boolean value whether the initialization has succeeded.
         """
         if self.initialized_for_forecasting is True:
@@ -81,7 +81,7 @@ class Estimator:
         self.previous_trend = (trend_x, trend_y)
 
         # Return a "rectangle" [top-left x, top-left y, width, height]
-        return [prediction_x, prediction_y, true_width, true_height]
+        return [int(prediction_x), int(prediction_y), true_width, true_height]
 
     def __calculate_smoothed_value(self, observed_true: float, previous_smoothed: float, previous_trend :float) -> float:
         """Calculate the 'smoothed value' part of a double-exponential smoothing process.
