@@ -5,45 +5,23 @@ from collections import deque
 
 class Estimator:
     """Provides an implementation for double exponential smoothing.
-
-    The constructor of this class only instantiates the Estimator object, however it can not yet make any predictions.
-    To initialize the Estimator the initialize_estimator method must be called. This call only succeeds if the position
-    buffer has been filled. The latter requirement stems from that the predict method uses a recursive formula for
-    a forecast and is undefined on initialization.
     """
 
-    def __init__(self):
-        """This only creates the estimator object.
+    def __init__(self, initial_pos: list, next_pos: list):
+        """Create and initialize the estimator for forecasting.
+        :param initial_pos: Initial position of Rectangle [top-left x, top-left y, width, height].
+        :param next_pos: Next position of Rectangle [top-left x, top-left y, width, height].
         """
         self.data_smoothing_factor = 0.8  # 0 <= data_smoothing_factor <= 1
         self.trend_smoothing_factor = 0.2  # 0 <= trend_smoothing_factor <= 1
 
-        self.position_buffer = deque(maxlen=2)
-        self.previous_smoothed = None
-        self.previous_trend = None
+        self.position_buffer = deque([initial_pos, next_pos], maxlen=2)
 
-        self.initialized_for_forecasting = False
+        x0, y0, width0, height0 = self.position_buffer[0]
+        x1, y1, width1, height1 = self.position_buffer[1]
 
-    def initalize(self, inital_pos, next_pos) -> bool:
-        """Initializes the estimator for forecasting.
-        :param initial_pos: Initial position of Rectangle [top-left x, top-left y, width, height].
-        :param next_pos: Next position of Rectangle [top-left x, top-left y, width, height].
-        :return: A boolean value whether the initialization has succeeded.
-        """
-        if self.initialized_for_forecasting is True:
-            return True
-
-        if len(self.position_buffer) == self.position_buffer.maxlen:
-            x0, y0, width0, height0 = self.position_buffer[0]
-            x1, y1, width1, height1 = self.position_buffer[1]
-
-            self.previous_smoothed = (x0, y0)
-            self.previous_trend = (x1 - x0, y1 - y0)
-
-            self.initialized_for_forecasting = True
-            return True
-
-        return False
+        self.previous_smoothed = (x0, y0)
+        self.previous_trend = (x1 - x0, y1 - y0)
 
     def add_data(self, position: list) -> None:
         """Add data to the position buffer.
@@ -57,8 +35,6 @@ class Estimator:
         :param t: Time-step for which the forecast is made. Fractional time-steps are supported.
         :return: Predicted future bounding rectangle [top-left x, top-left y, width, height] of tracked object.
         """
-        if not self.initialized_for_forecasting: return [float("nan"), float("nan"), float("nan"), float("nan")]
-
         true_x, true_y, true_width, true_height = self.position_buffer[0]
 
         smoothed_previous_x, smoothed_previous_y = self.previous_smoothed
@@ -83,7 +59,8 @@ class Estimator:
         # Return a "rectangle" [top-left x, top-left y, width, height]
         return [int(prediction_x), int(prediction_y), true_width, true_height]
 
-    def __calculate_smoothed_value(self, observed_true: float, previous_smoothed: float, previous_trend :float) -> float:
+    def __calculate_smoothed_value(self, observed_true: float, previous_smoothed: float,
+                                   previous_trend: float) -> float:
         """Calculate the 'smoothed value' part of a double-exponential smoothing process.
 
         :param observed_true: Top-left corner of bounding rectangle which is assumed to be a true positive.
@@ -94,7 +71,8 @@ class Estimator:
         return self.data_smoothing_factor * observed_true + (1 - self.data_smoothing_factor) * (
                 previous_smoothed + previous_trend)
 
-    def __calculate_trend_estimate(self, current_smoothed: float, previous_smoothed: float, previous_trend: float) -> float:
+    def __calculate_trend_estimate(self, current_smoothed: float, previous_smoothed: float,
+                                   previous_trend: float) -> float:
         """Calculate the 'trend value' part of a double-exponential smoothing process.
 
         :param current_smoothed: Smoothed value at current time-step.

@@ -21,7 +21,7 @@ VIDEO_PATH3 = "resources/test/short.mov"
 
 video_reader = VideoReader(VIDEO_PATH5)
 preprocessor = Preprocessor()
-estimator = Estimator()
+estimator = Estimator([0, 0, 0, 0], [0, 0, 0, 0])  # Initially no data about the ball, so initialize with 0-s
 detector = Detector()
 estimator = Estimator()
 
@@ -42,7 +42,7 @@ def main():
     # endregion gui
 
     initialize_preprocessor()
-    estimator.initalize([0, 0, 0, 0], [0, 0, 0, 0])  # Initially no data about the ball, so initialize with 0-s
+
 
 
     size = (height * 2, width * 2)  # *2 for adding images side by side
