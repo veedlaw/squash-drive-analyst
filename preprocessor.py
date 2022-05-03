@@ -1,10 +1,7 @@
-import timeit
-
-import cv2 as cv
-import numpy as np
 from collections import deque
-from utilities import *
 from timeit import default_timer as timer
+
+from utilities import *
 
 
 class Preprocessor:
@@ -28,71 +25,45 @@ class Preprocessor:
 
     def __init__(self):
         # deque is convenient, as once at max capacity, it auto-discards the last frame before adding a new one
-        self.frame_buffer = deque(maxlen=3)  # contains smoothed grayscale images, used as a "sliding window"
-        self.frame_difference_buffer = deque(maxlen=2)  # contains differenced images, used as a "sliding window"
-        self.dilation_kernel = np.ones((3, 3), np.uint8)
-        self.prev_deflicker = None
+        self.__frame_buffer = deque(maxlen=3)  # contains smoothed grayscale images, used as a "sliding window"
+        self.__frame_difference_buffer = deque(maxlen=2)  # contains differenced images, used as a "sliding window"
+        self.__dilation_kernel = np.ones((3, 3), np.uint8)
+        self.__prev_deflicker = None
 
     def ready(self) -> bool:
         """
         The preprocessor is ready when the frame buffer is filled.
         :return: True if the buffer has accumulated enough frames to start preprocessing.
         """
-        return len(self.frame_buffer) == self.frame_buffer.maxlen
+        return len(self.__frame_buffer) == self.__frame_buffer.maxlen
 
-    def add_to_frame_buffer(self, frame: np.ndarray) -> None:
+    def initialize_with(self, frame: np.ndarray) -> None:
         """
-        Prepares the frame and adds it to the frame buffer.
-
-        :param frame: A video frame.
+        Allows populating the frame buffer.
+        :param frame: A video frame
         """
-        start = timer()
-
-        frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        end = timer()
-        # print(f"grayscaling took {end - start}s")
-
-        start = timer()
-        if self.prev_deflicker is None:
-            self.prev_deflicker = frame
-        else:
-            deflickered = self.__deflicker(frame)
-            grayscaled = deflickered
-
-        end = timer()
-        # print(f"deflickering took {end - start}s")
-
-        start = timer()
-        frame = cv.GaussianBlur(frame, (5, 5), 0)
-        end = timer()
-        # print(f"gaussian blur took {end - start}s")
-
-        self.frame_buffer.append(frame)
-
-        if len(self.frame_buffer) < 3:  # Reading initial frames
-            if len(self.frame_buffer) == 2:  # We need two frames to start frame differencing
-                self.frame_difference_buffer.append(cv.absdiff(self.frame_buffer[0], self.frame_buffer[1]))
+        self.__add_to_frame_buffer(frame)
 
     def process(self, frame: np.ndarray) -> np.ndarray:
         """
         Uses a sliding window approach in the frame buffer for differentiating moving parts of the image from static
         parts.
 
-        Frames are received via the 'frame' parameter and after a few cleaning operations are added to the buffer.
+        Frames are received via the 'frame' parameter and after cleaning operations are added to the buffer.
 
         :return: A binary image that has differentiated moving parts of the image from static parts.
         """
-
+        self.__add_to_frame_buffer(frame)
         start = timer()
         # Apply frame differencing to the last two frames
-        difference = cv.absdiff(self.frame_buffer[1], self.frame_buffer[2])
+        difference = cv.absdiff(self.__frame_buffer[1], self.__frame_buffer[2])
         end = timer()
         # print(f"Frame differencing took {end - start}s")
-        self.frame_difference_buffer.append(difference)
+        self.__frame_difference_buffer.append(difference)
 
         # Combine with boolean "AND"
         start = timer()
-        combined = cv.bitwise_and(self.frame_difference_buffer[0], self.frame_difference_buffer[1])
+        combined = cv.bitwise_and(self.__frame_difference_buffer[0], self.__frame_difference_buffer[1])
         end = timer()
         # print(f"Frame combining took {end - start}s")
 
@@ -108,6 +79,39 @@ class Preprocessor:
 
         return processed
 
+    def __add_to_frame_buffer(self, frame: np.ndarray) -> None:
+        """
+        Prepares the frame and adds it to the frame buffer.
+
+        :param frame: A video frame.
+        """
+        start = timer()
+
+        frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        end = timer()
+        # print(f"grayscaling took {end - start}s")
+
+        start = timer()
+        if self.__prev_deflicker is None:
+            self.__prev_deflicker = frame
+        else:
+            deflickered = self.__deflicker(frame)
+            grayscaled = deflickered
+
+        end = timer()
+        # print(f"deflickering took {end - start}s")
+
+        start = timer()
+        frame = cv.GaussianBlur(frame, (5, 5), 0)
+        end = timer()
+        # print(f"gaussian blur took {end - start}s")
+
+        self.__frame_buffer.append(frame)
+
+        if len(self.__frame_buffer) < 3:  # Reading initial frames
+            if len(self.__frame_buffer) == 2:  # We need two frames to start frame differencing
+                self.__frame_difference_buffer.append(cv.absdiff(self.__frame_buffer[0], self.__frame_buffer[1]))
+
     def __morphological_close(self, image: np.ndarray, iterations: int) -> np.ndarray:
         """
         Returns the morphological closing (dilation followed by erosion) of the image.
@@ -116,8 +120,8 @@ class Preprocessor:
         :return: The morphological closing of the image
         """
 
-        dilated = cv.dilate(image, self.dilation_kernel, iterations=iterations)
-        processed = cv.erode(dilated, self.dilation_kernel)
+        dilated = cv.dilate(image, self.__dilation_kernel, iterations=iterations)
+        processed = cv.erode(dilated, self.__dilation_kernel)
         return processed
 
     def __deflicker(self, current_frame: np.ndarray, strengthcutoff=16) -> np.ndarray:
@@ -130,13 +134,13 @@ class Preprocessor:
         """
 
         start = timer()
-        strength_change_mask = np.abs(current_frame.astype(np.int16) - self.prev_deflicker) < strengthcutoff
-        current_frame[strength_change_mask] = self.prev_deflicker[strength_change_mask] + \
+        strength_change_mask = np.abs(current_frame.astype(np.int16) - self.__prev_deflicker) < strengthcutoff
+        current_frame[strength_change_mask] = self.__prev_deflicker[strength_change_mask] + \
                                               np.where(np.greater(current_frame[strength_change_mask],
-                                                                  self.prev_deflicker[strength_change_mask]), 1, -1)
+                                                                  self.__prev_deflicker[strength_change_mask]), 1, -1)
         end = timer()
         print(f"Deflicker took {end - start}s")
 
-        self.prev_deflicker = np.copy(current_frame)
+        self.__prev_deflicker = np.copy(current_frame)
 
         return current_frame

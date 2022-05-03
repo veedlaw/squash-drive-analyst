@@ -32,7 +32,7 @@ def initialize_preprocessor():
     for frame in video_reader.get_frame():
         if preprocessor.ready():
             return
-        preprocessor.add_to_frame_buffer(frame)
+        preprocessor.initialize_with(frame)
 
 
 def main():
@@ -50,11 +50,7 @@ def main():
     # out2 = cv.VideoWriter('test5.avi', fourcc, 20.0, size)
 
     for frame in video_reader.get_frame():
-        preprocessor.add_to_frame_buffer(frame)
-
-        if preprocessor.ready():
-            preprocessed = preprocessor.process(frame)
-            cleaned_contours = detector.classify(preprocessed)
+        preprocessed = preprocessor.process(frame)
 
             # TODO currently is min_contour, but should be ball candidate
             min_contour = min(cleaned_contours, key=rect_area)
