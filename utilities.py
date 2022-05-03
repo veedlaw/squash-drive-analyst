@@ -51,6 +51,12 @@ def blend(list_images):  # Blend images equally.
     return output
 
 
+def draw_contour(frame, rect):
+    print(f"rect = {rect}")
+    cv.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 2)
+    return frame
+
+
 def draw_contours(frame, preprocessed, detector):
     new_rectangles = detector.classify(preprocessed)
 
@@ -72,10 +78,6 @@ def draw_contours(frame, preprocessed, detector):
     return frame
 
 
-def rect_area(rect):
+def rect_area(rect: list) -> float:
     x, y, width, height = rect
-    return x * width + y * height
-
-def rect_center(rect):
-    x, y, width, height = rect
-    return None
+    return width * height
