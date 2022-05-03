@@ -1,6 +1,8 @@
 from collections import deque
 from timeit import default_timer as timer
 
+import cv2
+
 from utilities import *
 
 
@@ -56,19 +58,19 @@ class Preprocessor:
         self.__add_to_frame_buffer(frame)
         start = timer()
         # Apply frame differencing to the last two frames
-        difference = cv.absdiff(self.__frame_buffer[1], self.__frame_buffer[2])
+        difference = cv2.absdiff(self.__frame_buffer[1], self.__frame_buffer[2])
         end = timer()
         # print(f"Frame differencing took {end - start}s")
         self.__frame_difference_buffer.append(difference)
 
         # Combine with boolean "AND"
         start = timer()
-        combined = cv.bitwise_and(self.__frame_difference_buffer[0], self.__frame_difference_buffer[1])
+        combined = cv2.bitwise_and(self.__frame_difference_buffer[0], self.__frame_difference_buffer[1])
         end = timer()
         # print(f"Frame combining took {end - start}s")
 
         start = timer()
-        ret, thresholded = cv.threshold(combined, 0, 255, cv.THRESH_OTSU)
+        ret, thresholded = cv2.threshold(combined, 0, 255, cv2.THRESH_OTSU)
         end = timer()
         # print(f"thresholding took {end - start}s")
 
@@ -87,7 +89,7 @@ class Preprocessor:
         """
         start = timer()
 
-        frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         end = timer()
         # print(f"grayscaling took {end - start}s")
 
@@ -102,7 +104,7 @@ class Preprocessor:
         # print(f"deflickering took {end - start}s")
 
         start = timer()
-        frame = cv.GaussianBlur(frame, (5, 5), 0)
+        frame = cv2.GaussianBlur(frame, (5, 5), 0)
         end = timer()
         # print(f"gaussian blur took {end - start}s")
 
@@ -110,7 +112,7 @@ class Preprocessor:
 
         if len(self.__frame_buffer) < 3:  # Reading initial frames
             if len(self.__frame_buffer) == 2:  # We need two frames to start frame differencing
-                self.__frame_difference_buffer.append(cv.absdiff(self.__frame_buffer[0], self.__frame_buffer[1]))
+                self.__frame_difference_buffer.append(cv2.absdiff(self.__frame_buffer[0], self.__frame_buffer[1]))
 
     def __morphological_close(self, image: np.ndarray, iterations: int) -> np.ndarray:
         """
@@ -120,8 +122,8 @@ class Preprocessor:
         :return: The morphological closing of the image
         """
 
-        dilated = cv.dilate(image, self.__dilation_kernel, iterations=iterations)
-        processed = cv.erode(dilated, self.__dilation_kernel)
+        dilated = cv2.dilate(image, self.__dilation_kernel, iterations=iterations)
+        processed = cv2.erode(dilated, self.__dilation_kernel)
         return processed
 
     def __deflicker(self, current_frame: np.ndarray, strengthcutoff=16) -> np.ndarray:
