@@ -51,10 +51,9 @@ def blend(list_images):  # Blend images equally.
     return output
 
 
-def draw_contour(frame, rect):
+def draw_contour(frame, rect, color):
     print(f"rect = {rect}")
-    cv.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 2)
-    return frame
+    cv.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), color, 2)
 
 
 def draw_contours(frame, preprocessed, detector):
