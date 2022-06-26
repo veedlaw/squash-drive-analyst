@@ -3,17 +3,17 @@
 from collections import deque
 
 
-class Estimator:
+class DoubleExponentialEstimator:
     """Provides an implementation for double exponential smoothing.
     """
 
-    def __init__(self, initial_pos: list, next_pos: list):
+    def __init__(self, initial_pos=(0, 0, 0, 0), next_pos=(0, 0, 0, 0)):
         """Create and initialize the estimator for forecasting.
-        :param initial_pos: Initial position of Rectangle [top-left x, top-left y, width, height].
-        :param next_pos: Next position of Rectangle [top-left x, top-left y, width, height].
+        :param initial_pos: Initial observation position of Rectangle [top-left x, top-left y, width, height].
+        :param next_pos: Next observation position of Rectangle [top-left x, top-left y, width, height].
         """
-        self.__data_smoothing_factor = 0.8  # 0 <= data_smoothing_factor <= 1
-        self.__trend_smoothing_factor = 0.2  # 0 <= trend_smoothing_factor <= 1
+        self.__data_smoothing_factor = 0.9  # 0 <= data_smoothing_factor <= 1
+        self.__trend_smoothing_factor = 0.25  # 0 <= trend_smoothing_factor <= 1
 
         self.__position_buffer = deque([initial_pos, next_pos], maxlen=2)
 
@@ -23,10 +23,9 @@ class Estimator:
         self.__previous_smoothed = (x0, y0)
         self.__previous_trend = (x1 - x0, y1 - y0)
 
-    def add_data(self, position: list) -> None:
+    def correct(self, position: list) -> None:
         """Add data to the position buffer.
         :param position: Bounding rectangle [top-left x, top-left y, width, height] of tracked object.
-        :return: None
         """
         self.__position_buffer.append(position)
 
