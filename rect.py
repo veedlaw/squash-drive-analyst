@@ -16,6 +16,9 @@ class Rect:
         return int(self.x + self.width / 2), int(self.y + self.height)
 
     def center3D(self) -> (int, int, 1):
+        """
+        :return: Center (x: int, y: int, 1) of rectangle.
+        """
         return *self.center(), 1
 
     def area(self) -> int:
