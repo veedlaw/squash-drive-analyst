@@ -148,11 +148,35 @@ class BounceDetector:
         """
         Draws a circle on self.__court_img at the last known position of the ball.
         """
+
         # Obtain the last known position of the ball.
-        contour = self.__contour_path_history[-1]
-        # Draw the ball as a circle on the court image.
-        cv.circle(self.__court_img, center=(int(contour[0]), int(contour[1])), radius=5, color=(255, 0, 0),
-                  thickness=-1)
+        x, y = int(self.__contour_path_history[-1][0]), int(self.__contour_path_history[-1][1])
+        # Make sure the projection is within bounds (can not be in case of improper homography selection)
+
+        if x >= 360:
+            x = 359
+        elif x <= 0:
+            x = 1
+
+        if y >= 640:
+            y = 639
+        elif y <= 0:
+            y = 1
+
+        chunk_size = 11
+        circle_radius = 6
+
+        # Select a chunk of the court
+        court_chunk = self.__court_img[y - chunk_size // 2: y + chunk_size // 2 + 1, x - chunk_size // 2: x + chunk_size // 2 + 1]
+        court_chunk_copy = np.copy(court_chunk)
+
+        # Draw the ball as a circle on the copied chunk
+        cv.circle(court_chunk_copy, center=(chunk_size // 2, chunk_size // 2),
+                  radius=circle_radius, color=(255, 0, 0), thickness=-1)
+        # # Introduce transparency
+        chunk_with_circle = cv.addWeighted(court_chunk, 0.7, court_chunk_copy, 0.3, 1.0)
+        # Store the chunk back into the original court image
+        self.__court_img[y - chunk_size // 2: y + chunk_size // 2 + 1, x - chunk_size // 2: x + chunk_size // 2 + 1] = chunk_with_circle
 
     def __draw_court(self) -> np.ndarray:
         """
