@@ -1,5 +1,4 @@
 from collections import deque
-from timeit import default_timer as timer
 
 import cv2
 
@@ -7,6 +6,9 @@ from utilities import *
 
 
 class Preprocessor:
+    """
+    Preprocesses video frames and extracts the moving foreground from the static background.
+    """
     """
     The goal of the pre-processing stage of the analysis is to prepare the video for the later stages.
     The key part of this stage is capturing and differentiating the moving parts of the video from the
