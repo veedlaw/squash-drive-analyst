@@ -1,6 +1,7 @@
 import cv2 as cv
 import logging
 import numpy as np
+from utilities import FRAME_WIDTH, FRAME_HEIGHT
 
 
 class VideoReader:
@@ -21,6 +22,7 @@ class VideoReader:
             frame = self.__get_frame_from_stream()
 
             if frame is not None:
+                frame = cv.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT), interpolation=cv.INTER_LINEAR)
                 yield frame
             else:
                 return
@@ -54,7 +56,7 @@ class VideoReader:
         :param n: Number of frames to be read
         :return: N frames from the stream as numpy array.
         """
-        frame_array = np.empty((n), np.ndarray)
+        frame_array = np.empty(n, np.ndarray)
 
         # stores the current frame the video capture is on
         self.__current_frame_number = self.stream.get(cv.CAP_PROP_FRAME_COUNT)
