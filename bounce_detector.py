@@ -2,7 +2,8 @@ import numpy as np
 import cv2 as cv
 from collections import namedtuple, deque
 from matplotlib import pyplot as plt
-from utilities import get_intersect, is_within_window_height
+# from utilities import get_intersect, is_within_window_height, FRAME_HEIGHT, FRAME_WIDTH
+import utilities
 
 from rect import Rect
 
@@ -56,10 +57,10 @@ class BounceDetector:
         print(self.src[0])
         print(self.src[1])
         # Modify source coordinates for more accurate mapping
-        self.src[0] = get_intersect(self.src[0], self.src[1], self.__court_lower_boundary_L[:2],
-                                    self.__court_lower_boundary_R[:2])
-        self.src[2] = get_intersect(self.src[2], self.src[3], self.__court_lower_boundary_L[:2],
-                                    self.__court_lower_boundary_R[:2])
+        self.src[0] = utilities.get_intersect(self.src[0], self.src[1], self.__court_lower_boundary_L[:2],
+                                              self.__court_lower_boundary_R[:2])
+        self.src[2] = utilities.get_intersect(self.src[2], self.src[3], self.__court_lower_boundary_L[:2],
+                                              self.__court_lower_boundary_R[:2])
 
         self.__homography_matrix, _ = cv.findHomography(self.src, self.dst, cv.RANSAC, 5.0)
         self.__contour_path_history = deque(maxlen=2)
@@ -78,7 +79,7 @@ class BounceDetector:
         self.__initialized_plotting = False
         # endregion
 
-        self.__court_img = self.__draw_court()
+        self.__court_img = utilities.draw_court()
 
     def bounced(self) -> bool:
         """
@@ -98,13 +99,14 @@ class BounceDetector:
 
         if self.__bounce_cooldown_counter < 0:  # Only detect bounces once the cooldown has refreshed
             # Spotting the peak of the bounce
-            if is_within_window_height(current_projected_y) and \
-                    is_within_window_height(previous_projected_y) and \
+            if utilities.is_within_window_height(current_projected_y) and \
+                    utilities.is_within_window_height(previous_projected_y) and \
                     current_projected_y < previous_projected_y:
                 # Since the bounce has been registered, we reset the cooldown.
                 self.__bounce_cooldown_counter = self.__BOUNCE_COOLDOWN
                 # Visualize the bounce location on the court image.
-                self.__draw_ball_projection()
+                utilities.draw_ball_projection(self.__court_img, x=int(self.__contour_path_history[-1][0]),
+                                               y=int(self.__contour_path_history[-1][1]))
                 return True
         return False
 
@@ -143,105 +145,6 @@ class BounceDetector:
         Displays a drawn top-down court view.
         """
         cv.imshow("Ball bounces", self.__court_img)
-
-    def __draw_ball_projection(self) -> None:
-        """
-        Draws a circle on self.__court_img at the last known position of the ball.
-        """
-
-        # Obtain the last known position of the ball.
-        x, y = int(self.__contour_path_history[-1][0]), int(self.__contour_path_history[-1][1])
-        # Make sure the projection is within bounds (can not be in case of improper homography selection)
-
-        if x >= 360:
-            x = 359
-        elif x <= 0:
-            x = 1
-
-        if y >= 640:
-            y = 639
-        elif y <= 0:
-            y = 1
-
-        chunk_size = 11
-        circle_radius = 6
-
-        # Select a chunk of the court
-        court_chunk = self.__court_img[y - chunk_size // 2: y + chunk_size // 2 + 1, x - chunk_size // 2: x + chunk_size // 2 + 1]
-        court_chunk_copy = np.copy(court_chunk)
-
-        # Draw the ball as a circle on the copied chunk
-        cv.circle(court_chunk_copy, center=(chunk_size // 2, chunk_size // 2),
-                  radius=circle_radius, color=(255, 0, 0), thickness=-1)
-        # # Introduce transparency
-        chunk_with_circle = cv.addWeighted(court_chunk, 0.7, court_chunk_copy, 0.3, 1.0)
-        # Store the chunk back into the original court image
-        self.__court_img[y - chunk_size // 2: y + chunk_size // 2 + 1, x - chunk_size // 2: x + chunk_size // 2 + 1] = chunk_with_circle
-
-    def __draw_court(self) -> np.ndarray:
-        """
-        TODO HARD-coded pixel sizes
-        Draws a squash court using OpenCV drawing functions.
-        :return: Drawing of the court
-        """
-        """
-               ...                    side wall
-                       5.44m --------> |
-                                       |
-                                       |
-               |----1.6m---x---1.6m----x \\  <------------ Front of service box, Short line 
-               |           |           |    } 1.6m
-               |           |           | //
-               |           M-----------M   <-------------- Back of service box
-               |                 |     |\
-               |           service box |  \
-               |                       |    \\-  
-               |     back of court     |    //--  2.61m
-               |            |          |  /
-               |-----------------------|/
-               L---- Half-court line
-               
-               Total y-length = 9.75m (5.44m + 1.6m + 2.61m)
-        """
-        self.__court_img = np.empty((640, 360, 3), dtype=np.uint8)
-        COLOR_COURT = (181, 218, 240)
-        COLOR_RED = (0, 0, 255)
-        LINE_WIDTH = 3
-        self.__court_img[:] = COLOR_COURT
-
-        # Real side wall length is 9.75m or in a 1-to-1 conversion 975px
-        # similarly the read front wall length is 6.40m or 640px
-        # However we want a 1-to-1 mapping with our video resolution 480p
-        # so we perform the conversions:
-        side_wall_len = 640  # pixels
-        front_wall_len = 360  # pixels
-
-        hConv = side_wall_len / 975
-        wConv = front_wall_len / 640
-
-        short_line_from_front_wall = int(544 * hConv)
-
-        service_box_front_outer_L = self.Point(0, short_line_from_front_wall)
-        service_box_back_inner_L = self.Point(int(160 * wConv), short_line_from_front_wall + int(160 * hConv))
-        service_box_front_outer_R = self.Point(front_wall_len, short_line_from_front_wall)
-        service_box_back_inner_R = self.Point(front_wall_len - int(160 * wConv),
-                                              short_line_from_front_wall + int(160 * hConv))
-
-        # Draw the "Short line"
-        cv.line(self.__court_img, service_box_front_outer_L, service_box_front_outer_R, COLOR_RED, LINE_WIDTH)
-
-        # Draw the "Half Court line"
-        half_court_line_mid_court = self.Point(int((160 + 152.5) * wConv), short_line_from_front_wall)
-        half_court_line_end_court = self.Point(int((160 + 152.5) * wConv), side_wall_len)
-        cv.line(self.__court_img, half_court_line_mid_court, half_court_line_end_court, COLOR_RED, LINE_WIDTH)
-
-        # Draw the Left side service box
-        cv.rectangle(self.__court_img, service_box_front_outer_L, service_box_back_inner_L, COLOR_RED, LINE_WIDTH)
-
-        # Draw the Right side service box
-        cv.rectangle(self.__court_img, service_box_front_outer_R, service_box_back_inner_R, COLOR_RED, LINE_WIDTH)
-
-        return self.__court_img
 
     def __plot_ball_path(self) -> None:
         """

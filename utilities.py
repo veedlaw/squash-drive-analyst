@@ -3,6 +3,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from rect import Rect
 
+FRAME_WIDTH = 360
+FRAME_HEIGHT = 640
+
 
 def draw_grid(img, line_color=(0, 255, 0), thickness=1, type_=4, pxstep=90, pystep=128):
     """
@@ -88,6 +91,104 @@ def get_intersect(p1: (float, float), p2: (float, float), q1: (float, float), q2
     return x / z, y / z
 
 
-# TODO, currently hard-coded window dimension
+def draw_court() -> np.ndarray:
+    """
+    Draws a squash court using OpenCV drawing functions.
+    :return: Drawing of the court
+    """
+    """
+           ...                    side wall
+                   5.44m --------> |
+                                   |
+                                   |
+           |----1.525m---x---1.6m----x \\  <------------ Front of service box, Short line 
+           |           |           |    } 1.6m
+           |           |           | //
+           |           M-----------M   <-------------- Back of service box
+           |                 |     |\
+           |           service box |  \
+           |                       |    \\-  
+           |     back of court     |    //--  2.61m
+           |            |          |  /
+           |-----------------------|/
+           L---- Half-court line
+
+           Total y-length = 9.75m (5.44m + 1.6m + 2.61m)
+    """
+    court_img = np.empty((640, 360, 3), dtype=np.uint8)
+    COLOR_COURT = (181, 218, 240)
+    COLOR_RED = (0, 0, 255)
+    LINE_WIDTH = 3
+    court_img[:] = COLOR_COURT
+
+    # Real side wall length is 9.75m or in a 1-to-1 conversion 975px
+    # similarly the read front wall length is 6.40m or 640px
+    # However we want a 1-to-1 mapping with our video resolution
+    # so we perform the conversions:
+    side_wall_len = FRAME_HEIGHT
+    front_wall_len = FRAME_WIDTH
+
+    hConv = side_wall_len / 975
+    wConv = front_wall_len / 640
+
+    short_line_from_front_wall = int(544 * hConv)
+    service_box_len = 160
+
+    service_box_front_outer_L = (0, short_line_from_front_wall)
+    service_box_back_inner_L = (int(service_box_len * wConv), short_line_from_front_wall + int(service_box_len * hConv))
+    service_box_front_outer_R = (front_wall_len, short_line_from_front_wall)
+    service_box_back_inner_R = (front_wall_len - int(service_box_len * wConv),
+                                short_line_from_front_wall + int(service_box_len * hConv))
+
+    # Draw the "Short line"
+    cv.line(court_img, service_box_front_outer_L, service_box_front_outer_R, COLOR_RED, LINE_WIDTH)
+
+    # Draw the "Half Court line"
+    half_court_line_mid_court = (int((service_box_len + 152.5) * wConv), short_line_from_front_wall)
+    half_court_line_end_court = (int((service_box_len + 152.5) * wConv), side_wall_len)
+    cv.line(court_img, half_court_line_mid_court, half_court_line_end_court, COLOR_RED, LINE_WIDTH)
+
+    # Draw the Left side service box
+    cv.rectangle(court_img, service_box_front_outer_L, service_box_back_inner_L, COLOR_RED, LINE_WIDTH)
+
+    # Draw the Right side service box
+    cv.rectangle(court_img, service_box_front_outer_R, service_box_back_inner_R, COLOR_RED, LINE_WIDTH)
+
+    return court_img
+
+
+def draw_ball_projection(court: np.ndarray, x: int, y: int) -> None:
+    """
+    Draws a circle on court at location (x,y)
+    """
+
+    # Make sure x, y are within bounds
+    if x >= FRAME_WIDTH:
+        x = FRAME_WIDTH - 1
+    elif x <= 0:
+        x = 1
+
+    if y >= FRAME_HEIGHT:
+        y = FRAME_HEIGHT - 1
+    elif y <= 0:
+        y = 1
+
+    chunk_size = 11
+    circle_radius = 6
+
+    # Select a chunk of the court
+    court_chunk = court[y - chunk_size // 2: y + chunk_size // 2 + 1,
+                  x - chunk_size // 2: x + chunk_size // 2 + 1]
+    court_chunk_copy = np.copy(court_chunk)
+
+    # Draw the ball as a circle on the copied chunk
+    cv.circle(court_chunk_copy, center=(chunk_size // 2, chunk_size // 2),
+              radius=circle_radius, color=(255, 0, 0), thickness=-1)
+    # # Introduce transparency
+    chunk_with_circle = cv.addWeighted(court_chunk, 0.7, court_chunk_copy, 0.3, 1.0)
+    # Store the chunk back into the original court image
+    court[y - chunk_size // 2: y + chunk_size // 2 + 1,
+    x - chunk_size // 2: x + chunk_size // 2 + 1] = chunk_with_circle
+
 def is_within_window_height(y_height):
-    return 0 <= y_height <= 640
+    return 0 <= y_height <= FRAME_HEIGHT
