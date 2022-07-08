@@ -78,4 +78,4 @@ class DoubleExponentialEstimator:
         :return: New trend value.
         """
         return self.__trend_smoothing_factor * (cur_smoothed - prev_smoothed) + \
-               (1 - self.__trend_smoothing_factor) * prev_trend
+            (1 - self.__trend_smoothing_factor) * prev_trend
