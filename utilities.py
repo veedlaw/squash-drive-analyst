@@ -1,8 +1,7 @@
-import sys
-
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
+from rect import Rect
 
 
 def draw_grid(img, line_color=(0, 255, 0), thickness=1, type_=4, pxstep=90, pystep=128):
@@ -51,32 +50,44 @@ def blend(list_images):  # Blend images equally.
     return output
 
 
-def draw_contour(frame, rect, color):
-    print(f"rect = {rect}")
-    cv.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), color, 2)
+def draw_rect(frame: np.ndarray, rect: Rect, color: (int, int, int)) -> None:
+    cv.rectangle(frame, (int(rect.x), int(rect.y)), (int(rect.x) + int(rect.width), int(rect.y) + int(rect.height)),
+                 color, 2)
 
 
-def draw_contours(frame, preprocessed, detector):
-    new_rectangles = detector.classify(preprocessed)
-
-    # max_area = sys.maxsize
-    min_area = sys.maxsize
-    for rect in new_rectangles:
-        x, y, w, h = rect
-        area = w * h
-        if area < min_area:
-            min_area = area
-
-    for rect in new_rectangles:
-        x, y, w, h = rect
-        if w * h == min_area:
-            img = cv.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (121, 11, 189), 3)
-        else:
-            img = cv.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 2)
-    # return blend(images)
-    return frame
+def is_within(rect1: Rect, rect2: Rect) -> bool:
+    # print(f"{rect1.x} + {rect1.width} > {rect2.x} or {rect2.x} + {rect2.width} > {rect1.x}")
+    return (rect1.x < (rect2.x + rect2.width) and rect2.x < (rect1.x + rect1.width)) \
+           and (rect1.y < (rect2.y + rect2.height) and rect2.y < (rect1.y + rect1.height))
 
 
-def rect_area(rect: list) -> float:
-    x, y, width, height = rect
-    return width * height
+def get_intersect(p1: (float, float), p2: (float, float), q1: (float, float), q2: (float, float)) -> (float, float):
+    """
+    :param p1: (x, y) first point on the first line
+    :param p2: (x, y) second point on the first line
+    :param q1: (x, y) first point on the second line
+    :param q2: (x, y) second point on the second line
+    :return: Point of intersection ofthe lines passing through p1, p2 and q1, q2
+    """
+    """
+    Based on:
+        https://medium.com/@unifyai/part-i-projective-geometry-in-2d-b1ca26d5fa2a
+        https://stackoverflow.com/questions/3252194/numpy-and-line-intersections
+    """
+    # Convert all Cartesian points to homogeneous coordinates
+    h = np.hstack((np.vstack([p1, p2, q1, q2]), np.ones((4, 1))))
+    # get the first line
+    l1 = np.cross(h[0], h[1])
+    # get the second line
+    l2 = np.cross(h[2], h[3])
+    # point of intersection
+    x, y, z = np.cross(l1, l2)
+    # lines are parallel
+    if z == 0:
+        return float('inf'), float('inf')
+    return x / z, y / z
+
+
+# TODO, currently hard-coded window dimension
+def is_within_window_height(y_height):
+    return 0 <= y_height <= 640
