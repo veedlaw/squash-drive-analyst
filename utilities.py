@@ -160,6 +160,9 @@ def draw_court() -> np.ndarray:
 def draw_ball_projection(court: np.ndarray, x: int, y: int) -> None:
     """
     Draws a circle on court at location (x,y)
+    :param court: Image to be drawn on
+    :param x: Center-coordinate x
+    :param y: Center-coordinate y
     """
 
     # Make sure x, y are within bounds
@@ -190,5 +193,10 @@ def draw_ball_projection(court: np.ndarray, x: int, y: int) -> None:
     court[y - chunk_size // 2: y + chunk_size // 2 + 1,
     x - chunk_size // 2: x + chunk_size // 2 + 1] = chunk_with_circle
 
-def is_within_window_height(y_height):
+
+def is_within_window_height(y_height: float) -> bool:
+    """
+    :param y_height: Coordinate to check
+    :return: True if given y lies in the frame boundary, false otherwise
+    """
     return 0 <= y_height <= FRAME_HEIGHT
