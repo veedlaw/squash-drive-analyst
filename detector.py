@@ -175,9 +175,11 @@ class Detector:
         :return: List of rectangles [[x, y, width, height], ...]
 
         Many thanks to user HansHirse on StackOverflow.
+        #https://stackoverflow.com/questions/55376338/how-to-join-nearby-bounding-boxes-in-opencv-python/55385454#55385454
+        Algorithm has been adapted for squash-specific use.
         """
 
-        join_distance = 15
+        join_distance = 5
         processed = [False] * len(bounding_boxes)
         new_bounds = []
 
@@ -191,12 +193,19 @@ class Detector:
 
                     candxMin, candyMin, candxMax, candyMax = self.__get_rectangle_contours(rect2)
 
-                    if candxMin <= current_x_max + join_distance:
+                    if current_x_max + join_distance >= candxMin:
+
+                        if current_y_min < candyMin:
+                            if not current_y_max + 5 >= candyMin:
+                                continue
+                        else:
+                            if not current_y_min - 5 <= candyMax:
+                                continue
+
                         processed[j] = True
 
                         # Reset coordinates of current rect
                         current_x_max = candxMax
-                        # currxMax = max(currxMax, candxMax) - min(currxMin, candxMin)
                         current_y_min = min(current_y_min, candyMin)
                         current_y_max = max(current_y_max, candyMax)
                     else:
@@ -206,6 +215,7 @@ class Detector:
 
         return new_bounds
 
+    @staticmethod
     def __get_rectangle_contours(self, rectangle: Rect) -> list:
         """
         Takes a rectangle and returns the coordinates of the top-left and
