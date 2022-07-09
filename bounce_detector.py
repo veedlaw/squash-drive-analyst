@@ -105,8 +105,8 @@ class BounceDetector:
                 # Since the bounce has been registered, we reset the cooldown.
                 self.__bounce_cooldown_counter = self.__BOUNCE_COOLDOWN
                 # Visualize the bounce location on the court image.
-                utilities.draw_ball_projection(self.__court_img, x=int(self.__contour_path_history[-1][0]),
-                                               y=int(self.__contour_path_history[-1][1]))
+                utilities.draw_ball_projection(self.__court_img, x=int(self.__contour_path_history[0][0]),
+                                               y=int(self.__contour_path_history[0][1]))
                 return True
         return False
 
@@ -116,7 +116,7 @@ class BounceDetector:
         :param contour: Ball contour
         """
         contour_projection_point = self.__project_point(
-            (contour.x + contour.width / 2, contour.y + contour.height / 3, 1))
+            (contour.x + contour.width / 2, contour.y + contour.height / 2, 1))
         self.__bounce_cooldown_counter -= 1
         self.__contour_path_history.append(contour_projection_point)
 
