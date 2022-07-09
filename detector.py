@@ -21,9 +21,13 @@ class Detector:
         # Dummy entries for initial start-up of the detector.
         dummy_candidate = Rect(0, 0, 0, 0)
         # Means that during frame 1, we had a single ball candidate: 'dummy candidate'
-        self.__candidate_history.append([dummy_candidate])  # dummy entry
+        self.__candidate_history.append([dummy_candidate])
         # Similarly, means that during frame 2, we also had single ball candidate: 'dummy candidate'
-        self.__candidate_history.append([dummy_candidate])  # dummy entry
+        self.__candidate_history.append([dummy_candidate])
+
+        self.avg_area = 32 * 32  # Experimentally found nice constant
+        self.__prev_best_dist = 0
+        self.__dist_jump_cutoff = 100
 
         """ Mapping: goal: Rect -> (total_distance_required: float, from_rect: Rect, from_rect_layer_number: int) 
         total_distance_required gives the distance from layer 1 to reach current goal Rect. """
@@ -43,12 +47,12 @@ class Detector:
 
         # Obtain the best ball candidate by searching for most continuous path
         # through the previous and up-to-current ball candidates.
-        best_candidate = self.__find_shortest_path_candidate()
+        best_candidate = self.__find_shortest_path_candidate(prediction)
 
         # best_candidate is None in case of no candidates at all -> prediction is
         # selected as the most probable ball candidate.
         if best_candidate is None:
-            return prediction
+            best_candidate = prediction
 
         return best_candidate
 
@@ -62,12 +66,28 @@ class Detector:
         # Reduce noise by joining together nearby contours
         cleaned_contours = self.__join_contours(frame)
 
+        # region DEBUG: Show detector view
+        # frame_copy = cv.cvtColor(frame, cv.COLOR_GRAY2RGB)
+        # for contour in cleaned_contours:
+        #     utilities.draw_rect(frame_copy, contour, (255, 255, 0))
+        # cv.imshow("Detector view", frame_copy)
+        # endregion
+
+        cleaned_contours.append(prediction)
+
         # Sort the contours in ascending order based on contour area
         # (Ideally the largest contour is the player and the smallest contour is the ball)
         cleaned_contours.sort(key=lambda rect: rect.area())
 
-        # Throw away the biggest contour (most likely to be the player)
-        ball_candidates = cleaned_contours[:(len(cleaned_contours) - 1)]
+        # Filter tiny and excessively large contours
+        ball_candidates = list(
+            filter(lambda r: 0.5 * self.avg_area <= r.area() <= 3 * self.avg_area, cleaned_contours))
+
+        # Throw away the biggest contour (most likely to be the player) only if such a big contour even exists
+        # This prevents the undesirable action of discarding the real ball if it is the largest contour
+        if ball_candidates:
+            if cleaned_contours[-1].area() > self.avg_area * 1.25:
+                ball_candidates = cleaned_contours[:(len(cleaned_contours) - 1)]
 
         self.__candidate_history.append(ball_candidates)
 
@@ -77,7 +97,7 @@ class Detector:
         if not ball_candidates:
             self.__candidate_history[-1].extend([prediction])
 
-    def __find_shortest_path_candidate(self) -> Rect:
+    def __find_shortest_path_candidate(self, prediction) -> Rect:
         """
         Finds the shortest path through sequences of ball candidates.
 
@@ -129,11 +149,15 @@ class Detector:
                     best_dist = self.__best_paths[endpoint_rect][0]
                     best_point = endpoint_rect
                 # If distance throughout the path is very small, then it is likely a non-moving target,
-                # thus not the ball
+                # thus not the ball, this avoids locking onto noisy flicker targets.
                 elif dist <= 2:
-                    # print(f"dist: {dist} is < threshsold")
-                    # print(f"skipping over {endpoint_rect}")
                     continue
+
+        # Avoid sudden jumps in case the ball is lost for a frame or two
+        if self.__prev_best_dist < best_dist - self.__dist_jump_cutoff:
+            return prediction
+        self.__prev_best_dist = best_dist
+
         return best_point
 
     def __join_contours(self, frame: np.ndarray) -> list:
@@ -216,7 +240,7 @@ class Detector:
         return new_bounds
 
     @staticmethod
-    def __get_rectangle_contours(self, rectangle: Rect) -> list:
+    def __get_rectangle_contours(rectangle: list) -> list:
         """
         Takes a rectangle and returns the coordinates of the top-left and
         bottom-right corner.
