@@ -107,7 +107,7 @@ class Preprocessor:
         processed = cv2.erode(dilated, self.__dilation_kernel)
         return processed
 
-    def __deflicker(self, current_frame: np.ndarray, strengthcutoff=16) -> None:
+    def __deflicker(self, current_frame: np.ndarray, strength_cutoff=25) -> None:
         """
         Compares the corresponding pixels in the last two frames and
         if their difference is below a given threshold, it adjusts the intensity of the
@@ -115,7 +115,7 @@ class Preprocessor:
         in essence removing some flickering noise.
         """
 
-        strength_change_mask = np.abs(current_frame.astype(np.int16) - self.__prev_deflicker) < strengthcutoff
+        strength_change_mask = np.abs(current_frame.astype(np.int16) - self.__prev_deflicker) < strength_cutoff
         current_frame[strength_change_mask] = self.__prev_deflicker[strength_change_mask] + \
                                               np.where(np.greater(current_frame[strength_change_mask],
                                                                   self.__prev_deflicker[strength_change_mask]), 1, -1)
