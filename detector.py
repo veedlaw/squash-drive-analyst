@@ -100,7 +100,7 @@ class Detector:
                 # Calculate which was the most probable observation point we came from
                 # i.e. this loops over the previous observation layer and compares distances between them.
                 for from_point in self.__candidate_history[i - 1]:
-                    dist = self.__rect_dist(point_assumed_best, from_point)
+                    dist = np.linalg.norm((point_assumed_best.x - from_point.x, point_assumed_best.y - from_point.y))
                     # Remember the shortest distance and from which point it is achieved
                     if dist < best_dist:
                         best_dist = dist
@@ -219,24 +219,3 @@ class Detector:
         y_max = y_min + height
 
         return [x_min, y_min, x_max, y_max]
-
-    @staticmethod
-    def __rect_dist(rect1: Rect, rect2: Rect) -> float:
-        """
-        Pseudo-distance function taking into account raw distance and size differences between Rectangles
-        :param rect1: Rectangle
-        :param rect2: Rectangle
-        :return: Custom-'distance' between Rect-s.
-        """
-        dist = (rect1.x - rect2.x) ** 4 + (rect1.y - rect2.y) ** 4
-        if (rect1.width - rect2.width) > 5:
-            dist += (rect1.width - rect2.width) ** 4
-        else:
-            dist += (rect1.width - rect2.width) ** 2
-        if (rect1.height - rect2.height) > 5:
-            dist += (rect1.height - rect2.height) ** 4
-        else:
-            dist += (rect1.height - rect2.height) ** 2
-        dist = np.sqrt(dist)
-
-        return dist
