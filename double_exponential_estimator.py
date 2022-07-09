@@ -56,7 +56,7 @@ class DoubleExponentialEstimator:
         self.__previous_trend = (trend_x, trend_y)
 
         # Return a Rect(top-left x, top-left y, width, height)
-        return Rect(int(prediction_x), int(prediction_y), prev_pos.width, prev_pos.height)
+        return Rect(int(prediction_x), int(prediction_y), prev_pos.width + 2, prev_pos.height + 2)
 
     def __calculate_smoothed_value(self, observed_true: float, prev_smoothed: float, prev_trend: float) -> float:
         """Calculate the 'smoothed value' part of a double-exponential smoothing process.
