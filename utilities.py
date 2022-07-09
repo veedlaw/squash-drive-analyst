@@ -165,23 +165,22 @@ def draw_ball_projection(court: np.ndarray, x: int, y: int) -> None:
     :param y: Center-coordinate y
     """
 
-    # Make sure x, y are within bounds
-    if x >= FRAME_WIDTH:
-        x = FRAME_WIDTH - 1
-    elif x <= 0:
-        x = 1
-
-    if y >= FRAME_HEIGHT:
-        y = FRAME_HEIGHT - 1
-    elif y <= 0:
-        y = 1
-
     chunk_size = 11
     circle_radius = 6
 
+    # Make sure x, y are within bounds
+    if x >= FRAME_WIDTH:
+        x = FRAME_WIDTH - chunk_size
+    elif x <= chunk_size:
+        x = chunk_size
+
+    if y >= FRAME_HEIGHT:
+        y = FRAME_HEIGHT - chunk_size
+    elif y <= chunk_size:
+        y = chunk_size
+
     # Select a chunk of the court
-    court_chunk = court[y - chunk_size // 2: y + chunk_size // 2 + 1,
-                  x - chunk_size // 2: x + chunk_size // 2 + 1]
+    court_chunk = court[y - chunk_size // 2: y + chunk_size // 2 + 1, x - chunk_size // 2: x + chunk_size // 2 + 1]
     court_chunk_copy = np.copy(court_chunk)
 
     # Draw the ball as a circle on the copied chunk
