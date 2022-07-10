@@ -5,7 +5,7 @@ from detector import Detector
 from double_exponential_estimator import DoubleExponentialEstimator
 from preprocessor import *
 from utils.court import Court
-from videoReader import VideoReader
+from utils.video_reader import VideoReader
 
 VIDEO_PATH = "../../Downloads/IMG_4189720.mov"
 
@@ -13,7 +13,10 @@ video_reader = VideoReader(VIDEO_PATH)
 preprocessor = Preprocessor()
 estimator = DoubleExponentialEstimator()
 detector = Detector()
+bounce_detector = BounceDetector(0, 0)  # TODO dummy initializers for development purposes
 
+court_img = Court.get_court_drawing()
+# Court.draw_targets_grid(court_img)
 
 def initialize_preprocessor():
     for frame in video_reader.get_frame():
@@ -27,10 +30,9 @@ def main():
     # g = Gui()
     # g.create_and_show_GUI()
     # endregion gui
-    bounce_detector = BounceDetector(0, 0)  # TODO dummy initializers for development purposes
     debug = False
     cv_frame_wait_time = 0  # wait value 0 blocks until key press
-    bounce_detector.show_court_view()
+    cv.imshow("Court View", court_img)
     initialize_preprocessor()
 
     for frame in video_reader.get_frame():
@@ -44,6 +46,7 @@ def main():
         # region drawing
         draw_rect(frame, prediction, (0, 255, 0))
         draw_rect(frame, ball_bounding_box, (255, 0, 0))
+        bounce_detector.show_projection(frame)
         if debug:
             # Show the preprocessed image in parallel to video frame
             frame = np.concatenate((frame, cv.cvtColor(preprocessed, cv.COLOR_GRAY2RGB)), axis=1)
@@ -51,7 +54,8 @@ def main():
 
         bounce_detector.update_contour_data(ball_bounding_box)
         if bounce_detector.bounced():
-            bounce_detector.show_court_view()
+            Court.draw_ball_projection(court_img, *bounce_detector.get_last_bounce_location())
+            cv.imshow("Court View", court_img)
 
         cv2.setMouseCallback("detector_frame", onMouse)
         cv2.setMouseCallback("Projection view", onMouse)
