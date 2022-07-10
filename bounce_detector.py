@@ -79,8 +79,6 @@ class BounceDetector:
         self.__initialized_plotting = False
         # endregion
 
-        self.__court_img = utilities.draw_court()
-
     def bounced(self) -> bool:
         """
         :return: True, if ball bounced, False otherwise.
@@ -104,12 +102,6 @@ class BounceDetector:
                     current_projected_y < previous_projected_y:
                 # Since the bounce has been registered, we reset the cooldown.
                 self.__bounce_cooldown_counter = self.__BOUNCE_COOLDOWN
-                # Visualize the bounce location on the court image.
-                # We pick NOT the current contour, but the previous known contour, because
-                # the current contour already signals the next position from the bounce whereas
-                # the previous contour actually marks the position of the bounce.
-                utilities.draw_ball_projection(self.__court_img, x=int(self.__contour_path_history[0][0]),
-                                               y=int(self.__contour_path_history[0][1]))
                 return True
         return False
 
@@ -125,6 +117,17 @@ class BounceDetector:
 
         # For real-time plotting uncomment:
         # self.__plot_ball_path()
+
+    def get_last_bounce_location(self) -> (int, int):
+        """
+        WARNING: This method returns valid data only if bounced() returns true.
+        This method retrieves the last known bounce location of the ball.
+        :return: 2D ball coordinates
+        """
+        # We pick NOT the current contour, but the previous known contour, because
+        # the current contour already signals the next position from the bounce whereas
+        # the previous contour actually marks the position of the bounce.
+        return int(self.__contour_path_history[0][0]), int(self.__contour_path_history[0][1])
 
     def __project_point(self, point):
         """
@@ -142,12 +145,6 @@ class BounceDetector:
         """
         cv.imshow("Projection view",
                   cv.warpPerspective(frame, self.__homography_matrix, (frame.shape[1], frame.shape[0])))
-
-    def show_court_view(self) -> None:
-        """
-        Displays a drawn top-down court view.
-        """
-        cv.imshow("Ball bounces", self.__court_img)
 
     def __plot_ball_path(self) -> None:
         """
