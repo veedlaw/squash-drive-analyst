@@ -2,7 +2,7 @@ from collections import deque
 
 import cv2
 
-from utilities import *
+from utils.utilities import *
 
 
 class Preprocessor:

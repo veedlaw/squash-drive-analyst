@@ -1,7 +1,7 @@
 import cv2 as cv
 import logging
 import numpy as np
-from utilities import FRAME_WIDTH, FRAME_HEIGHT
+from utils.utilities import FRAME_WIDTH, FRAME_HEIGHT
 
 
 class VideoReader:

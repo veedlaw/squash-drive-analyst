@@ -2,7 +2,7 @@
 # https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc433.htm
 from collections import deque
 
-from rect import Rect
+from utils.rect import Rect
 
 
 class DoubleExponentialEstimator:

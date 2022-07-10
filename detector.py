@@ -4,7 +4,7 @@ from collections import deque
 
 from typing import List
 
-from rect import Rect
+from utils.rect import Rect
 
 import cv2 as cv
 import numpy as np

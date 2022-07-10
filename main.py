@@ -4,6 +4,7 @@ from bounce_detector import BounceDetector
 from detector import Detector
 from double_exponential_estimator import DoubleExponentialEstimator
 from preprocessor import *
+from utils.court import Court
 from videoReader import VideoReader
 
 VIDEO_PATH = "../../Downloads/IMG_4189720.mov"
