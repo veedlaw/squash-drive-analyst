@@ -73,8 +73,6 @@ class Detector:
         # cv.imshow("Detector view", frame_copy)
         # endregion
 
-        cleaned_contours.append(prediction)
-
         # Sort the contours in ascending order based on contour area
         # (Ideally the largest contour is the player and the smallest contour is the ball)
         cleaned_contours.sort(key=lambda rect: rect.area())
