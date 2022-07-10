@@ -2,10 +2,8 @@ import numpy as np
 import cv2 as cv
 from collections import namedtuple, deque
 from matplotlib import pyplot as plt
-# from utilities import get_intersect, is_within_window_height, FRAME_HEIGHT, FRAME_WIDTH
-import utilities
-
-from rect import Rect
+from utils import utilities
+from utils.rect import Rect
 
 
 class BounceDetector:
