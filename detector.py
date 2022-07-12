@@ -153,10 +153,11 @@ class Detector:
 
         # Avoid sudden jumps in case the ball is lost for a frame or two
         if self.__prev_best_dist < best_dist - self.__dist_jump_cutoff:
-            self.__prev_best_dist *= 1.2
-            print(f"RETURNING PREDICTION Instead of best point: {best_point}")
+            self.__prev_best_dist *= 1.2  # Inflate the distance as to not get stuck in a loop
+            # print(f"RETURNING PREDICTION Instead of best point: {best_point}")
             self.__candidate_history[-1].extend([prediction])
             return prediction
+
         self.__prev_best_dist = best_dist
 
         return best_point
