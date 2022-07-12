@@ -69,9 +69,9 @@ class Preprocessor:
         # Threshold the combined image
         ret, thresholded = cv2.threshold(combined, 0, 255, cv2.THRESH_OTSU)
         # cv.imshow("thresholded", thresholded)
-        print(f'ret = {ret}')
-        if ret <= 5:
-            _, thresholded = cv2.threshold(combined, 16, 255, cv.THRESH_BINARY)
+        # If Otsu's thresholding picks a low threshold due to low amount of foreground pixels
+        if ret <= 8:
+            _, thresholded = cv2.threshold(combined, 24, 255, cv.THRESH_BINARY)
             # cv.imshow("REthresholded", thresholded)
         # Dilate the contours via morphological closing
         processed = self.__morphological_close(thresholded, 9)
