@@ -22,33 +22,31 @@ class BounceDetector:
             (340, 507),
             (340, 466)
         ])
-
-        # self.dst = np.array([
-        #     (270, 462),
-        #     (270, 357),
-        #     (360, 462),
-        #     (360, 357)
-        # ])
-
-        # self.src = np.array([
-        #     # (170, 494),
-        #     (203, 460),
-        #     (160, 494),
-        #     # (348, 502),
-        #     (349, 634),
-        #     (340, 465)
-        # ])
         self.dst = np.array([
             (270, 640),
             (270, 357),
             (360, 640),
             (360, 357)
         ])
-
         # Hardcoded for development speed purposes
         # Real video coordinates
         self.__court_lower_boundary_L = (3, 603, 1)
         self.__court_lower_boundary_R = (354, 636, 1)
+
+        # self.src = np.array([  # BH2.mov
+        #     (77, 338),
+        #     (90, 313),
+        #     (273, 337),
+        #     (240, 312)
+        # ])
+        # self.dst = np.array([ #BH2.mov
+        #     (0, 640),
+        #     (0, 357),
+        #     (90, 640),
+        #     (90, 357)
+        # ])
+        # self.__court_lower_boundary_L = (11, 490, 1)
+        # self.__court_lower_boundary_R = (355, 480, 1)
 
         print(self.__court_lower_boundary_L[:2])
         print(self.__court_lower_boundary_R[:2])
@@ -59,9 +57,10 @@ class BounceDetector:
                                               self.__court_lower_boundary_R[:2])
         self.src[2] = utilities.get_intersect(self.src[2], self.src[3], self.__court_lower_boundary_L[:2],
                                               self.__court_lower_boundary_R[:2])
+        # endregion
 
         self.__homography_matrix, _ = cv.findHomography(self.src, self.dst, cv.RANSAC, 5.0)
-        self.__contour_path_history = deque(maxlen=2)
+        self.__contour_path_history = deque(maxlen=5)
         # Fill with initial dummy values
         for i in range(self.__contour_path_history.maxlen):
             self.__contour_path_history.append([0, 0])
@@ -75,7 +74,6 @@ class BounceDetector:
 
         # Flag for __plot_ball_method initialization
         self.__initialized_plotting = False
-        # endregion
 
     def bounced(self) -> bool:
         """
@@ -95,10 +93,12 @@ class BounceDetector:
 
         if self.__bounce_cooldown_counter < 0:  # Only detect bounces once the cooldown has refreshed
             # Spotting the peak of the bounce
-            if utilities.is_within_window_height(current_projected_y) and \
-                    utilities.is_within_window_height(previous_projected_y) and \
-                    current_projected_y < previous_projected_y:
-                # Since the bounce has been registered, we reset the cooldown.
+            for x_proj, y_proj in self.__contour_path_history:
+                if not utilities.is_within_window_height(y_proj):
+                    return False
+
+            if self.__contour_path_history[0][1] <= self.__contour_path_history[1][1] < self.__contour_path_history[2][1] \
+                 and self.__contour_path_history[2][1] > self.__contour_path_history[3][1] >= self.__contour_path_history[4][1]:
                 self.__bounce_cooldown_counter = self.__BOUNCE_COOLDOWN
                 return True
         return False
@@ -122,10 +122,10 @@ class BounceDetector:
         This method retrieves the last known bounce location of the ball.
         :return: 2D ball coordinates
         """
-        # We pick NOT the current contour, but the previous known contour, because
-        # the current contour already signals the next position from the bounce whereas
-        # the previous contour actually marks the position of the bounce.
-        return int(self.__contour_path_history[0][0]), int(self.__contour_path_history[0][1])
+        # We pick NOT the current contour, but the middle known contour, because
+        # the current contour already signals the next positions from the bounce whereas
+        # the middle contour actually marks the position of the bounce.
+        return int(self.__contour_path_history[2][0]), int(self.__contour_path_history[2][1])
 
     def __project_point(self, point):
         """
