@@ -65,12 +65,16 @@ class Preprocessor:
 
         # Combine with boolean "AND"
         combined = cv2.bitwise_and(self.__frame_difference_buffer[0], self.__frame_difference_buffer[1])
-
+        # cv.imshow("combined", combined)
         # Threshold the combined image
         ret, thresholded = cv2.threshold(combined, 0, 255, cv2.THRESH_OTSU)
-
+        # cv.imshow("thresholded", thresholded)
+        print(f'ret = {ret}')
+        if ret <= 5:
+            _, thresholded = cv2.threshold(combined, 16, 255, cv.THRESH_BINARY)
+            # cv.imshow("REthresholded", thresholded)
         # Dilate the contours via morphological closing
-        processed = self.__morphological_close(thresholded, 13)
+        processed = self.__morphological_close(thresholded, 9)
 
         return processed
 
@@ -82,10 +86,10 @@ class Preprocessor:
         """
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        if self.__prev_deflicker is None:
-            self.__prev_deflicker = frame
-        else:
-            self.__deflicker(frame)
+        # if self.__prev_deflicker is None:
+        #     self.__prev_deflicker = frame
+        # else:
+        #     self.__deflicker(frame)
 
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
 
