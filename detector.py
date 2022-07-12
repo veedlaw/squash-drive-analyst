@@ -150,10 +150,6 @@ class Detector:
                     # self.__candidate_history[-1].extend([prediction])
                     best_dist = dist
                     best_point = endpoint_rect
-                # If distance throughout the path is very small, then it is likely a non-moving target,
-                # thus not the ball, this avoids locking onto noisy flicker targets.
-                elif dist <= 2:
-                    continue
 
         # Avoid sudden jumps in case the ball is lost for a frame or two
         if self.__prev_best_dist < best_dist - self.__dist_jump_cutoff:
