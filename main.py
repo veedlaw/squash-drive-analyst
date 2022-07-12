@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from stats import AccuracyStatistics, create_target_rects
 from bounce_detector import BounceDetector
 from detector import Detector
 from double_exponential_estimator import DoubleExponentialEstimator
@@ -8,15 +9,20 @@ from utils.court import Court
 from utils.video_reader import VideoReader
 
 VIDEO_PATH = "../../Downloads/IMG_4189720.mov"
+# VIDEO_PATH = "../../Downloads/bh2.MOV"
+
+target_rects = create_target_rects()
 
 video_reader = VideoReader(VIDEO_PATH)
 preprocessor = Preprocessor()
 estimator = DoubleExponentialEstimator()
 detector = Detector()
 bounce_detector = BounceDetector(0, 0)  # TODO dummy initializers for development purposes
+stats_tracker = AccuracyStatistics(target_rects)
 
 court_img = Court.get_court_drawing()
-# Court.draw_targets_grid(court_img)
+Court.draw_targets_grid(court_img, target_rects)
+
 
 def initialize_preprocessor():
     for frame in video_reader.get_frame():
@@ -46,7 +52,7 @@ def main():
         # region drawing
         draw_rect(frame, prediction, (0, 255, 0))
         draw_rect(frame, ball_bounding_box, (255, 0, 0))
-        bounce_detector.show_projection(frame)
+        # bounce_detector.show_projection(frame)
         if debug:
             # Show the preprocessed image in parallel to video frame
             frame = np.concatenate((frame, cv.cvtColor(preprocessed, cv.COLOR_GRAY2RGB)), axis=1)
@@ -54,13 +60,16 @@ def main():
 
         bounce_detector.update_contour_data(ball_bounding_box)
         if bounce_detector.bounced():
-            Court.draw_ball_projection(court_img, *bounce_detector.get_last_bounce_location())
-            cv.imshow("Court View", court_img)
+            x, y = bounce_detector.get_last_bounce_location()
+            Court.draw_ball_projection(court_img, x, y)
+            stats_tracker.record_bounce(x, y)
 
+            cv.imshow("Court View", court_img)
+            stats_tracker.generate_output()
+        cv2.imshow("Video", frame)
+        # region keys
         cv2.setMouseCallback("detector_frame", onMouse)
         cv2.setMouseCallback("Projection view", onMouse)
-        # region keys
-        cv2.imshow("Video", frame)
         cv2.setMouseCallback("Video", onMouse)
         key = cv2.waitKey(cv_frame_wait_time)
         if key == ord('q'):
@@ -72,6 +81,8 @@ def main():
         elif key == ord('f'):
             cv_frame_wait_time = 1
         # endregion
+    else:
+        cv2.waitKey(0)
 
     cv2.destroyAllWindows()
 
