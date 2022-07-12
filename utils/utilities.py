@@ -7,50 +7,13 @@ FRAME_WIDTH = 360
 FRAME_HEIGHT = 640
 
 
-def draw_grid(img, line_color=(0, 255, 0), thickness=1, type_=4, pxstep=90, pystep=128):
-    """
-    Draws a grid on an image
-    :param img: Image for the lines to be drawn on.
-    :param line_color: Color of the line
-    :param thickness: Thickness of the line
-    :param type_: Type of line
-    :param pxstep: Every pxstep pixels a line will be drawn
-    :param pystep: Every pystep pixels a line will be drawn
-    """
-    img = cv.cvtColor(img, cv.COLOR_GRAY2RGB)
-    x = pxstep
-    y = pystep
-    while x < img.shape[1]:
-        cv.line(img, (x, 0), (x, img.shape[0]), color=line_color, lineType=type_, thickness=thickness)
-        x += pxstep
-
-    while y < img.shape[0]:
-        cv.line(img, (0, y), (img.shape[1], y), color=line_color, lineType=type_, thickness=thickness)
-        y += pystep
-    return img
-
-
-def show_histogram(img, processed_img):
+def show_histogram(img):
     """Debugging function that shows plotted histogram of two images."""
     hist_full = cv.calcHist([img], [0], None, [255], [0, 255])
     plt.subplot(221), plt.imshow(img, 'gray')
-    plt.subplot(222), plt.imshow(processed_img, 'gray')
-    plt.subplot(223), plt.plot(hist_full)
+    plt.subplot(222), plt.plot(hist_full)
     plt.xlim([0, 255])
     plt.show()
-
-
-def blend(list_images):  # Blend images equally.
-
-    equal_fraction = 1.0 / (len(list_images))
-
-    output = np.zeros_like(list_images[0])
-
-    for img in list_images:
-        output = output + img * equal_fraction
-
-    output = output.astype(np.uint8)
-    return output
 
 
 def draw_rect(frame: np.ndarray, rect: Rect, color: (int, int, int), line_width=2) -> None:
@@ -58,10 +21,14 @@ def draw_rect(frame: np.ndarray, rect: Rect, color: (int, int, int), line_width=
                  color, line_width)
 
 
-def is_within(rect1: Rect, rect2: Rect) -> bool:
-    # print(f"{rect1.x} + {rect1.width} > {rect2.x} or {rect2.x} + {rect2.width} > {rect1.x}")
-    return (rect1.x < (rect2.x + rect2.width) and rect2.x < (rect1.x + rect1.width)) \
-           and (rect1.y < (rect2.y + rect2.height) and rect2.y < (rect1.y + rect1.height))
+def is_within(rect: Rect, x: float, y: float) -> bool:
+    """
+    :param rect: Rectangle
+    :param x: X-coordinate
+    :param y: Y-coordinate
+    :return: True if (x, y) lies within the boundaries of the rect. False otherwise.
+    """
+    return (rect.x <= x <= rect.x + rect.width) and (rect.y <= y <= rect.y + rect.height)
 
 
 def get_intersect(p1: (float, float), p2: (float, float), q1: (float, float), q2: (float, float)) -> (float, float):
