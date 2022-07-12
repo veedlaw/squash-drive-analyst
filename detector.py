@@ -4,6 +4,7 @@ from collections import deque
 
 from typing import List
 
+from utils import utilities
 from utils.rect import Rect
 
 import cv2 as cv
@@ -16,7 +17,7 @@ class Detector:
     """
 
     def __init__(self):
-        self.__candidate_history = deque(maxlen=9)  # deque(list[Rect], list[Rect], ...)
+        self.__candidate_history = deque(maxlen=7)  # deque(list[Rect], list[Rect], ...)
 
         # Dummy entries for initial start-up of the detector.
         dummy_candidate = Rect(0, 0, 0, 0)
@@ -25,7 +26,7 @@ class Detector:
         # Similarly, means that during frame 2, we also had single ball candidate: 'dummy candidate'
         self.__candidate_history.append([dummy_candidate])
 
-        self.avg_area = 32 * 32  # Experimentally found nice constant
+        self.avg_area = 24*25  # Experimentally found nice constant
         self.__prev_best_dist = 0
         self.__dist_jump_cutoff = 100
 
@@ -76,15 +77,16 @@ class Detector:
         # Sort the contours in ascending order based on contour area
         # (Ideally the largest contour is the player and the smallest contour is the ball)
         cleaned_contours.sort(key=lambda rect: rect.area())
-
         # Filter tiny and excessively large contours
         ball_candidates = list(
-            filter(lambda r: 0.5 * self.avg_area <= r.area() <= 3 * self.avg_area, cleaned_contours))
+            filter(lambda r: 0.3 * self.avg_area <= r.area() <= 3 * self.avg_area, cleaned_contours))
+        print(f'filtered ball candidates = {ball_candidates}')
 
         # Throw away the biggest contour (most likely to be the player) only if such a big contour even exists
         # This prevents the undesirable action of discarding the real ball if it is the largest contour
         if ball_candidates:
-            if cleaned_contours[-1].area() > self.avg_area * 1.25:
+            if cleaned_contours[-1].area() > self.avg_area * 1.5:
+                print(f"throwing away: {cleaned_contours[-1]}")
                 ball_candidates = cleaned_contours[:(len(cleaned_contours) - 1)]
 
         self.__candidate_history.append(ball_candidates)
@@ -115,10 +117,11 @@ class Detector:
                 best_dist = sys.maxsize
                 best_from_point = None  # Which point was the best to reach 'point_assumed_best'
 
+                squareness = np.linalg.norm(point_assumed_best.width - point_assumed_best.height)
                 # Calculate which was the most probable observation point we came from
                 # i.e. this loops over the previous observation layer and compares distances between them.
                 for from_point in self.__candidate_history[i - 1]:
-                    dist = np.linalg.norm((point_assumed_best.x - from_point.x, point_assumed_best.y - from_point.y))
+                    dist = np.linalg.norm((point_assumed_best.x - from_point.x, point_assumed_best.y - from_point.y)) + squareness
                     # Remember the shortest distance and from which point it is achieved
                     if dist < best_dist:
                         best_dist = dist
@@ -143,8 +146,9 @@ class Detector:
             if self.__best_paths[endpoint_rect][2] == len(self.__candidate_history) - 1:
                 dist = self.__best_paths[endpoint_rect][0]
 
-                if best_dist > dist > 2:
-                    best_dist = self.__best_paths[endpoint_rect][0]
+                if best_dist > dist:
+                    # self.__candidate_history[-1].extend([prediction])
+                    best_dist = dist
                     best_point = endpoint_rect
                 # If distance throughout the path is very small, then it is likely a non-moving target,
                 # thus not the ball, this avoids locking onto noisy flicker targets.
@@ -153,6 +157,9 @@ class Detector:
 
         # Avoid sudden jumps in case the ball is lost for a frame or two
         if self.__prev_best_dist < best_dist - self.__dist_jump_cutoff:
+            self.__prev_best_dist *= 1.2
+            print(f"RETURNING PREDICTION Instead of best point: {best_point}")
+            self.__candidate_history[-1].extend([prediction])
             return prediction
         self.__prev_best_dist = best_dist
 
@@ -201,7 +208,8 @@ class Detector:
         Algorithm has been adapted for squash-specific use.
         """
 
-        join_distance = 5
+        join_distance_x = 5
+        join_distance_y = 2 * join_distance_x
         processed = [False] * len(bounding_boxes)
         new_bounds = []
 
@@ -215,13 +223,13 @@ class Detector:
 
                     candxMin, candyMin, candxMax, candyMax = self.__get_rectangle_contours(rect2)
 
-                    if current_x_max + join_distance >= candxMin:
+                    if current_x_max + join_distance_x >= candxMin:
 
                         if current_y_min < candyMin:
-                            if not current_y_max + 5 >= candyMin:
+                            if not current_y_max + join_distance_y >= candyMin:
                                 continue
                         else:
-                            if not current_y_min - 5 <= candyMax:
+                            if not current_y_min - join_distance_y <= candyMax:
                                 continue
 
                         processed[j] = True
