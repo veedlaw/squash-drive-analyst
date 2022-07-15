@@ -3,6 +3,8 @@ from typing import List
 from utils import utilities
 from utils.court import Court
 from utils.rect import Rect
+import cv2 as cv
+
 
 def create_target_rects() -> List[Rect]:
     """
@@ -16,9 +18,9 @@ def create_target_rects() -> List[Rect]:
                    width=dir * int(Court.service_box_len * Court.wConv),
                    height=int(Court.service_box_len * Court.hConv))
     zone2_R = Rect(zone1_R.x, zone1_R.y + zone1_R.height, zone1_R.width, int((261 / 2) * Court.hConv))
-    zone3_R = Rect(zone1_R.x, zone2_R.y + zone2_R.height, zone2_R.width, int((261 / 2) * Court.hConv) + 6)
+    zone3_R = Rect(zone1_R.x, zone2_R.y + zone2_R.height, zone2_R.width, int((261 / 2) * Court.hConv) + 8)
     rects = [zone1_R, zone2_R, zone3_R]
-    widths = [dir * int((Court.service_box_len - 30) * Court.wConv), dir * int(30 * Court.wConv)]
+    widths = [dir * int((Court.service_box_len - 30) * Court.wConv), dir * int(40 * Court.wConv)]
     for i in range(2):
         parent_rect = rects[-1]
         for j in range(3):
@@ -39,7 +41,7 @@ class AccuracyStatistics:
         print(self.__target_rects)
         self.__total_shots = 0
 
-    def record_bounce(self, x, y):
+    def record_bounce(self, x, y) -> None:
         """
         :param x:
         :param y:
@@ -53,7 +55,7 @@ class AccuracyStatistics:
                 self.__target_rects[target_rect].append((x, y))
                 break
         else:
-            self.__target_rects[self.non_target_rect].append((x,y))
+            self.__target_rects[self.non_target_rect].append((x, y))
         self.__total_shots += 1
 
     def generate_output(self):
