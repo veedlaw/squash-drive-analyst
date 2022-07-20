@@ -61,10 +61,10 @@ class Gui:
             cv.setMouseCallback(WINDOW_NAME, self.onMouse)
 
             # Handling mouse at window boundary cases also:
-            from_x = max(min(self.__mouse_x, FRAME_WIDTH) - (window_size_x_half - 1), window_size_x_half - 1)
-            to_x = min(self.__mouse_x + (window_size_x_half + 1), FRAME_WIDTH - (window_size_x_half - 3))
+            from_x = max(min(self.__mouse_x - window_size_x_half, FRAME_WIDTH-1), 0)
+            to_x = min(self.__mouse_x + (window_size_x_half + 1), FRAME_WIDTH)
             from_y = max(self.__mouse_y - (window_size_y_half - 1), window_size_y_half)
-            to_y = min(self.__mouse_y + (window_size_y_half + 1), FRAME_HEIGHT - (window_size_y_half - 1))
+            to_y = min(self.__mouse_y + (window_size_y_half + 1), FRAME_HEIGHT)
 
             # "window" pixels
             pixels = img[from_y:to_y, from_x:to_x]
