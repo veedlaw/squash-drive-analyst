@@ -64,3 +64,4 @@ class VideoReader:
             logging.getLogger("Can't receive frame (stream end?). Exiting ...")
 
         return frame
+
