@@ -2,6 +2,8 @@ import cv2 as cv
 import logging
 import numpy as np
 from utils.utilities import FRAME_WIDTH, FRAME_HEIGHT
+from threading import Thread
+from collections import deque
 
 
 class VideoReader:
@@ -12,60 +14,53 @@ class VideoReader:
     def __init__(self, video_path: str):
         self.stream = cv.VideoCapture(video_path)
         self.__current_frame_number = 0
+        self.__stopped = False
+        self.__frame_buffer = deque(maxlen=3)
+
+    def start_reading(self) -> None:
+        """
+        Starts a producer-thread that fills a buffer with video frames to be read.
+        """
+
+        def fill_buf():
+            # Keep reading frames until __stopped or run out of frames to read.
+            while not self.__stopped and self.stream.isOpened():
+                if len(self.__frame_buffer) < self.__frame_buffer.maxlen:
+                    frame = self.__get_frame_from_stream()
+                    if frame is not None:
+                        frame_resized = cv.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT), interpolation=cv.INTER_LINEAR)
+                        self.__frame_buffer.append(frame_resized)
+                    else:
+                        break
+            # Wait for consumer to finish processing remaining frames
+            while not self.__stopped and len(self.__frame_buffer) > 0:
+                pass
+            # Signal end
+            self.__stopped = True
+            self.stream.release()
+
+        Thread(target=fill_buf).start()
 
     def get_frame(self) -> np.ndarray:
         """
-        Feeds video frames using a generator
-        :return: Single frame from video
+        Fetches a video frame from buffer.
         """
-        while self.stream.isOpened():
-            frame = self.__get_frame_from_stream()
+        while not self.__stopped:
+            if self.__frame_buffer:
+                yield self.__frame_buffer.pop()
 
-            if frame is not None:
-                frame = cv.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT), interpolation=cv.INTER_LINEAR)
-                yield frame
-            else:
-                return
-
-        self.stream.release()
+    def stop_reading(self):
+        self.__stopped = True
 
     def __get_frame_from_stream(self) -> np.ndarray:
         """
         Returns a frame from the class' video stream.
         :return: Read frame, or None if read was unsuccessful
         """
-        # .read() is a blocking operation, might want to do something about that in the future
         successful_read, frame = self.stream.read()
 
         if not successful_read:
+            # TODO handle in GUI
             logging.getLogger("Can't receive frame (stream end?). Exiting ...")
 
         return frame
-
-    def set_stream_frame_pos(self, stream_pos: int) -> None:
-        """
-        Sets the stream back to the specific frame 'stream_pos'
-        :param stream_pos: Number of the frame in the stream
-        """
-        self.stream.set(cv.CAP_PROP_POS_FRAMES, stream_pos)
-
-    def get_N_frames(self, n: int) -> np.ndarray:
-        """
-        Gets N frames from the video stream.
-        After reading n frames returns the reading position to it's previous position. (frame_count - n)
-        :param n: Number of frames to be read
-        :return: N frames from the stream as numpy array.
-        """
-        frame_array = np.empty(n, np.ndarray)
-
-        # stores the current frame the video capture is on
-        self.__current_frame_number = self.stream.get(cv.CAP_PROP_FRAME_COUNT)
-
-        for i in range(n):
-            if self.stream.isOpened():
-                frame_array[i] = self.__get_frame_from_stream()
-
-        # Reset reading from previous frame number
-        self.set_stream_frame_pos(self.__current_frame_number)
-
-        return frame_array
