@@ -80,13 +80,11 @@ class Detector:
         # Filter tiny and excessively large contours
         ball_candidates = list(
             filter(lambda r: 0.3 * self.avg_area <= r.area() <= 3 * self.avg_area, cleaned_contours))
-        print(f'filtered ball candidates = {ball_candidates}')
 
         # Throw away the biggest contour (most likely to be the player) only if such a big contour even exists
         # This prevents the undesirable action of discarding the real ball if it is the largest contour
         if ball_candidates:
             if cleaned_contours[-1].area() > self.avg_area * 1.5:
-                print(f"throwing away: {cleaned_contours[-1]}")
                 ball_candidates = cleaned_contours[:(len(cleaned_contours) - 1)]
 
         self.__candidate_history.append(ball_candidates)
@@ -101,8 +99,8 @@ class Detector:
         """
         Finds the shortest path through sequences of ball candidates.
 
-        A most probable ball candidate is selected based on the idea that a ball's contour size stays almost constant
-        and that the movement of a squash ball follows a continuous path.
+        A most probable ball candidate is selected based on the idea that
+        the movement of a squash ball follows a continuous path.
 
         :return: Ball candidate at the end of the shortest trajectory through the candidates.
         """
