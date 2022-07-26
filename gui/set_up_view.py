@@ -3,7 +3,7 @@ import numpy as np
 import tkinter as tk
 from tkinter import messagebox
 
-from gui.analysis_view import AnalysisView
+from gui import guistate
 from gui.panel_view import PanelView
 from utils.utilities import FRAME_WIDTH, FRAME_HEIGHT
 
@@ -60,8 +60,7 @@ class SetUpWindow:
         Upon clicking ok progresses into video analysis.
         """
         if messagebox.askokcancel("Start analysis?", "All required points have been selected. Start analysis?"):
-            self.teardown()
-            AnalysisView(self.__root, self.__img, self.video_reader)
+            self.__master.event_generate(guistate.ANALYSIS)
 
     def __update_zoom(self) -> None:
         """
