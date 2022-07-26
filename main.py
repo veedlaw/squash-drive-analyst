@@ -1,96 +1,106 @@
 #!/usr/bin/env python3
+import tkinter as tk
+from tkinter import messagebox
 
-from stats import AccuracyStatistics, create_target_rects
-from bounce_detector import BounceDetector
-from detector import Detector
-from double_exponential_estimator import DoubleExponentialEstimator
+from gui import file_selection, set_up_view, guistate
+from gui.analysis_view import AnalysisView
+
 from preprocessor import *
+from double_exponential_estimator import DoubleExponentialEstimator
+from detector import Detector
+from bounce_detector import BounceDetector
+from stats import AccuracyStatistics, create_target_rects
 from utils.court import Court
 from utils.video_reader import VideoReader
 
 VIDEO_PATH = "../../Downloads/IMG_4189720.mov"
 # VIDEO_PATH = "../../Downloads/bh2.MOV"
 
-target_rects = create_target_rects()
 
-video_reader = VideoReader(VIDEO_PATH)
-preprocessor = Preprocessor()
-estimator = DoubleExponentialEstimator()
-detector = Detector()
-bounce_detector = BounceDetector(0, 0)  # TODO dummy initializers for development purposes
-stats_tracker = AccuracyStatistics(target_rects)
+class MainApplication(tk.Frame):
+    """
+    Orchestrates the running of the application.
+    """
 
-court_img = Court.get_court_drawing()
-Court.draw_targets_grid(court_img, target_rects)
+    def __init__(self, master, *args, **kwargs):
+        tk.Frame.__init__(self, master, *args, **kwargs)
+        self.__master = master
 
+        # Make the view appear in front of other windows when starting the application
+        master.lift()
+        master.attributes('-topmost', True)
+        master.after_idle(root.attributes, '-topmost', False)
 
-def initialize_preprocessor():
-    for frame in video_reader.get_frame():
-        if preprocessor.ready():
+        # Go to the file selection view
+        self.view = file_selection.FileSelectionView(master)
+
+        # Set up the processing pipeline
+        self.video_reader = None  # To-be-selected
+        self.preprocessor = Preprocessor()
+        self.estimator = DoubleExponentialEstimator()
+        self.detector = Detector()
+        self.bounce_detector = BounceDetector(0, 0)  # TODO to-be-selected
+        self.target_rects = create_target_rects()
+        self.stats_tracker = AccuracyStatistics(self.target_rects)
+        self.court_img = Court.get_court_drawing()
+        Court.draw_targets_grid(self.court_img, self.target_rects)
+
+        master.bind(guistate.SETUP, self.__change_state_SETUP)
+        master.bind(guistate.ANALYSIS, self.__change_state_ANALYSIS)
+
+    def __change_state_SETUP(self, evt: tk.Event) -> None:
+        """
+        Assumes state change from file selection to set-up state.
+        State transition fails in case of I/O errors.
+        :param evt: TKinter event
+        """
+        if not self.__try_initialize_video_reader(self.view.file_path):
             return
-        preprocessor.initialize_with(frame)
+
+        self.__initialize_preprocessor()
+        self.view = set_up_view.SetUpWindow(root, next(self.video_reader.get_frame()))
+
+    # TODO
+    def __change_state_ANALYSIS(self, evt: tk.Event) -> None:
+        """
+        Assumes state change from set-up to analysis state.
+        :param evt: TKinter event
+        """
+        # Tear down the old frame
+        self.view.teardown()
+        # Move into analysis view
+        self.view = AnalysisView(self.__master, next(self.video_reader.get_frame()), self.video_reader, self.court_img)
+
+    def __try_initialize_video_reader(self, file_path) -> bool:
+        """
+        :param file_path: Path of video file
+        :return: True if successful, False otherwise.
+        """
+        try:
+            self.video_reader = VideoReader(file_path)
+            self.video_reader.start_reading()
+            return True
+        except:
+            messagebox.showerror("Error", "An error occurred during file selection.")
+            return False
+
+    def __initialize_preprocessor(self) -> None:
+        """
+        Initializes the PreProcessor with starting frames.
+        """
+        for frame in self.video_reader.get_frame():
+            if self.preprocessor.ready():
+                return
+            self.preprocessor.initialize_with(frame)
+
+    # TODO
+    def __initialize_bounce_detector(self):
+        pass
 
 
-def main():
-    # region gui
-    # g = Gui()
-    # g.create_and_show_GUI()
-    # endregion gui
-    debug = False
-    cv_frame_wait_time = 0  # wait value 0 blocks until key press
-    cv.imshow("Court View", court_img)
-    initialize_preprocessor()
-
-    for frame in video_reader.get_frame():
-        preprocessed = preprocessor.process(frame)
-        prediction = estimator.predict(t=1)
-        if prediction.x < 0 or prediction.y < 0:
-            prediction = Rect(-prediction.width, -prediction.height, prediction.width, prediction.height)
-        ball_bounding_box = detector.select_most_probable_candidate(preprocessed, prediction)
-        estimator.correct(position=ball_bounding_box)
-
-        # region drawing
-        draw_rect(frame, prediction, (0, 255, 0))
-        draw_rect(frame, ball_bounding_box, (255, 0, 0))
-        # bounce_detector.show_projection(frame)
-        if debug:
-            # Show the preprocessed image in parallel to video frame
-            frame = np.concatenate((frame, cv.cvtColor(preprocessed, cv.COLOR_GRAY2RGB)), axis=1)
-        # endregion drawing
-
-        bounce_detector.update_contour_data(ball_bounding_box)
-        if bounce_detector.bounced():
-            x, y = bounce_detector.get_last_bounce_location()
-            Court.draw_ball_projection(court_img, x, y)
-            stats_tracker.record_bounce(x, y)
-
-            cv.imshow("Court View", court_img)
-            stats_tracker.generate_output()
-        cv2.imshow("Video", frame)
-        # region keys
-        cv2.setMouseCallback("detector_frame", onMouse)
-        cv2.setMouseCallback("Projection view", onMouse)
-        cv2.setMouseCallback("Video", onMouse)
-        key = cv2.waitKey(cv_frame_wait_time)
-        if key == ord('q'):
-            break
-        elif key == ord('d'):
-            debug = not debug
-        elif key == ord('w'):
-            cv_frame_wait_time = 0
-        elif key == ord('f'):
-            cv_frame_wait_time = 1
-        # endregion
-    else:
-        cv2.waitKey(0)
-
-    cv2.destroyAllWindows()
-
-
-def onMouse(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        print(f"x = {x}, y = {y}")
 
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    MainApplication(root)
+    root.mainloop()
