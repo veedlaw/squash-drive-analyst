@@ -12,10 +12,10 @@ class VideoReader:
     """
 
     def __init__(self, video_path: str):
-        self.stream = cv.VideoCapture(video_path)
+        self.__stream = cv.VideoCapture(video_path)
         self.__current_frame_number = 0
-        self.__stopped = False
-        self.__frame_buffer = deque(maxlen=3)
+        self.__stopped = True
+        self.__frame_buffer = deque(maxlen=5)
 
     def start_reading(self) -> None:
         """
@@ -23,9 +23,10 @@ class VideoReader:
         """
 
         def fill_buf():
+            self.__stopped = False
             # Keep reading frames until __stopped or run out of frames to read.
-            while not self.__stopped and self.stream.isOpened():
-                if len(self.__frame_buffer) < self.__frame_buffer.maxlen:
+            while not self.__stopped and self.__stream.isOpened():
+                if len(self.__frame_buffer) < self.__frame_buffer.maxlen - 1:
                     frame = self.__get_frame_from_stream()
                     if frame is not None:
                         frame_resized = cv.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT), interpolation=cv.INTER_LINEAR)
@@ -37,7 +38,7 @@ class VideoReader:
                 pass
             # Signal end
             self.__stopped = True
-            self.stream.release()
+            self.__stream.release()
 
         Thread(target=fill_buf).start()
 
@@ -49,15 +50,18 @@ class VideoReader:
             if self.__frame_buffer:
                 yield self.__frame_buffer.pop()
 
-    def stop_reading(self):
+    def stop_reading(self) -> None:
+        """
+        Stop the video reader from reading any new frames.
+        """
         self.__stopped = True
 
     def __get_frame_from_stream(self) -> np.ndarray:
         """
-        Returns a frame from the class' video stream.
+        Returns a frame from the class' video __stream.
         :return: Read frame, or None if read was unsuccessful
         """
-        successful_read, frame = self.stream.read()
+        successful_read, frame = self.__stream.read()
 
         if not successful_read:
             # TODO handle in GUI
