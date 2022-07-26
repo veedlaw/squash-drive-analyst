@@ -14,13 +14,10 @@ class SetUpWindow:
     the user confirms readiness.
     """
 
-    def __init__(self, root, init_frame: np.ndarray, video_reader):
+    def __init__(self, master, init_frame: np.ndarray):
 
-        self.video_reader = video_reader
-
-
-        self.__root = root
-        self.__view = PanelView(root, init_frame)
+        self.__master = master
+        self.__view = PanelView(master, init_frame)
         self.__undo_button = tk.Button(self.__view.frame, text="Undo", width=50, command=self.__on_undo)
         self.__undo_button.grid(column=0, columnspan=2)
 
@@ -39,7 +36,7 @@ class SetUpWindow:
         self.__NUM_MARKERS_REQUIRED = self.__num_box_coords + self.__num_back_court_coords
 
         self.__WINDOW_TITLE_BASE = "Select required points "
-        root.title(f"{self.__WINDOW_TITLE_BASE}: 0/{self.__NUM_MARKERS_REQUIRED}")
+        master.title(f"{self.__WINDOW_TITLE_BASE}: 0/{self.__NUM_MARKERS_REQUIRED}")
 
         # Initially set mouse position at the center of the frame
         self.__mouse_x = FRAME_WIDTH // 2
@@ -47,11 +44,11 @@ class SetUpWindow:
 
         self.__binds = {'<Motion>': self.__on_motion, '<Button-1>': self.__on_click}
         for evt, func in self.__binds.items():
-            root.bind(evt, func)
+            master.bind(evt, func)
 
-        ###############TODO
+        ###############TODO for development purposes
         # self.teardown()
-        # AnalysisView(self.__root, self.__img, self.video_reader)
+        # AnalysisView(self.__master, self.__img, self.video_reader)
         ###############TODOV
 
     def __show_start_analysis_dialog(self) -> None:
@@ -154,7 +151,7 @@ class SetUpWindow:
         self.__update_zoom()
         self.__view.update_label_left(self.__img_copy)
         self.__update_title()
-        self.__root.update()
+        self.__master.update()
 
         if len(self.__markers) == self.__NUM_MARKERS_REQUIRED:
             self.__show_start_analysis_dialog()
@@ -198,13 +195,13 @@ class SetUpWindow:
         """
         Update application titlebar
         """
-        self.__root.title(f"{self.__WINDOW_TITLE_BASE}: {len(self.__markers)}/{self.__NUM_MARKERS_REQUIRED}")
+        self.__master.title(f"{self.__WINDOW_TITLE_BASE}: {len(self.__markers)}/{self.__NUM_MARKERS_REQUIRED}")
 
     def teardown(self) -> None:
         """
         Destroys the SetUpWindow frame and unbinds all events.
         """
         self.__view.teardown()
-        self.__root.title("")
+        self.__master.title("")
         for event in self.__binds:
-            self.__root.unbind(event)
+            self.__master.unbind(event)
