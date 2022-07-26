@@ -29,3 +29,6 @@ class FileSelectionView:
         # If a file has been selected try to transfer to the SETUP state.
         if self.file_path:
             self.__master.event_generate(guistate.SETUP, data=self.file_path)
+
+    def teardown(self) -> None:
+        self.__master.title("")
