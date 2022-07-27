@@ -31,7 +31,8 @@ class AnalysisView:
         self.__master.title(f"Processing video")
         self.__update_event_str = "<<processedFrame>>"
 
-        self.__binds = {'<p>': self.__on_pause, self.__update_event_str: self.__update_view}
+        self.__binds = {'<p>': self.__on_pause, '<h>': self.__toggle_headless,
+                self.__update_event_str: self.__update_view}
         for evt, func in self.__binds.items():
             master.bind(evt, func)
 
@@ -81,6 +82,13 @@ class AnalysisView:
         if self.__running:
             with self.__pause_condition:
                 self.__pause_condition.notify()
+
+    def __toggle_headless(self, event: tk.Event) -> None:
+        """
+        Useful to speed up the analysis step during development.
+        :param event: TKinter event
+        """
+        self.__headless.set(not self.__headless.get())
 
     def teardown(self) -> None:
         """
