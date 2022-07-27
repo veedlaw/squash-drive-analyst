@@ -33,7 +33,9 @@ class MainApplication(tk.Frame):
         self.__video_reader = None  # To-be-selected by user
         self.__stats_tracker = None
         self.__court_img = None
+
         self.__headless = tk.BooleanVar()
+        self.__service_box_dir = tk.IntVar()
 
         # Bind state transition events.
         master.bind(guistate.SETUP, self.__try_change_state_SETUP)
@@ -52,7 +54,7 @@ class MainApplication(tk.Frame):
 
         self.__init_frame = next(self.__video_reader.get_frame())
         # Move into setup view state
-        self.view = set_up_view.SetUpWindow(root, self.__init_frame, self.__headless)
+        self.view = set_up_view.SetUpWindow(root, self.__init_frame, self.__headless, self.__service_box_dir)
 
     def __change_state_ANALYSIS(self, evt: tk.Event) -> None:
         """
@@ -63,7 +65,7 @@ class MainApplication(tk.Frame):
         self.view.teardown()
 
         self.__court_img = Court.get_court_drawing()
-        self.__stats_tracker = AccuracyStatistics(Court.create_target_rects())
+        self.__stats_tracker = AccuracyStatistics(Court.create_target_rects(self.__service_box_dir.get()))
 
         pipeline = Pipeline(self.__video_reader, [0, 0], self.__court_img, self.__stats_tracker)  # TODO
         # Move into analysis view state
