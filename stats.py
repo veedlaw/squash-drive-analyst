@@ -39,3 +39,15 @@ class AccuracyStatistics:
             print(f"Target block {i}: {len(self.__target_rects[target_rect])} shots landed")
 
         pass
+
+    def write_output(self, image) -> None:
+        """TODO"""
+        for rect in self.__target_rects.keys():
+            cv.putText(image, str(len(self.__target_rects[rect])), (rect.x, rect.y + rect.height),
+                       cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv.LINE_AA)
+
+    def get_target_rects(self) -> List[Rect]:
+        """
+        :return: List of tracked target rectangles.
+        """
+        return [target_rect for target_rect in self.__target_rects.keys()]
