@@ -14,7 +14,7 @@ class SetUpWindow:
     the user confirms readiness.
     """
 
-    def __init__(self, master, init_frame: np.ndarray, headless_var: tk.BooleanVar):
+    def __init__(self, master, init_frame: np.ndarray, headless_var: tk.BooleanVar, direction_var: tk.IntVar):
 
         self.__master = master
         self.__headless = headless_var
@@ -25,8 +25,15 @@ class SetUpWindow:
         self.__undo_button.grid(column=0, row=1)
 
         self.__checkbutton = tk.Checkbutton(self.__view.frame, variable=self.__headless,
-                text="Show processing video (Slower)", onvalue=False, offvalue=True)
+                                            text="Show processing video (Slower)", onvalue=False, offvalue=True)
         self.__checkbutton.grid(row=1, column=1, sticky='W')
+
+        self.__service_box_left_radiobutton = tk.Radiobutton(self.__view.frame, text="Left service box",
+                                                             variable=direction_var, value=-1)
+        self.__service_box_left_radiobutton.grid(row=1, column=2)
+        self.__service_box_right_radiobutton = tk.Radiobutton(self.__view.frame, text="Right service box",
+                                                              variable=direction_var, value=1)
+        self.__service_box_right_radiobutton.grid(row=1, column=3)
 
         self.__img = init_frame
         self.__img_copy = None
@@ -155,6 +162,11 @@ class SetUpWindow:
         self.__update_title()
         self.__master.update()
 
+        # Once all box coordinates have been selected try to guess which side of the
+        # Court the service box lies so the user doesn't have to manually select it.
+        if len(self.__markers) == self.__num_box_coords:
+            self.__guess_radio_button()
+
         if len(self.__markers) == self.__NUM_MARKERS_REQUIRED:
             self.__show_start_analysis_dialog()
 
@@ -198,6 +210,36 @@ class SetUpWindow:
         Update application titlebar
         """
         self.__master.title(f"{self.__WINDOW_TITLE_BASE}: {len(self.__markers)}/{self.__NUM_MARKERS_REQUIRED}")
+
+    def __guess_radio_button(self) -> None:
+        """
+        Guess based on whether the left and right-hand upper coordinates
+        lie to the left or to the right of the center of the frame
+        This is based on the assumption that the user films a video parallel to the sidewall
+        """
+
+        sorted_by_y = sorted(self.__markers[:self.__num_box_coords], key=lambda x: x[1])
+        # Sum x-coordinates and take the mean
+        print(sorted_by_y[0])
+        print(sorted_by_y[1])
+        mean = (sorted_by_y[0][0] + sorted_by_y[1][0]) // 2
+
+        if mean >= FRAME_WIDTH // 2:
+            self.__service_box_right_radiobutton.select()
+        else:
+            self.__service_box_left_radiobutton.select()
+
+    def get_service_box_markers(self) -> list:
+        """
+        :return: Coordinates marking all four corners of a service box and court lower boundaries.
+        """
+        return self.__markers[:self.__num_box_coords]
+
+    def get_court_lower_boundary_coords(self) -> list:
+        """
+        :return:
+        """
+        return self.__markers[self.__num_box_coords:self.__num_box_coords + self.__num_back_court_coords]
 
     def teardown(self) -> None:
         """
