@@ -18,10 +18,10 @@ class PanelView(tk.Frame):
         self.frame.grid()
 
         # Create the labels that hold the images
-        self.__label_left = tk.Label(self.frame)
-        self.__label_left.grid(column=0, row=0, padx=10, pady=10)
-        self.__label_right = tk.Label(self.frame)
-        self.__label_right.grid(column=1, row=0, padx=10, pady=10)
+        self.label_left = tk.Label(self.frame)
+        self.label_left.grid(column=0, row=0, padx=10, pady=10, columnspan=2)
+        self.label_right = tk.Label(self.frame)
+        self.label_right.grid(column=2, row=0, padx=10, pady=10, columnspan=2)
 
         self.panel1_tk_img = None
         self.panel2_tk_img = None
@@ -34,7 +34,7 @@ class PanelView(tk.Frame):
         :param frame: OpenCV image
         """
         self.panel1_tk_img = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(cv.cvtColor(frame, cv.COLOR_BGR2RGB)))
-        self.__label_left.configure(image=self.panel1_tk_img)
+        self.label_left.configure(image=self.panel1_tk_img)
 
     def update_label_right(self, frame: np.ndarray) -> None:
         """
@@ -42,14 +42,15 @@ class PanelView(tk.Frame):
         :param frame: OpenCV image
         """
         self.panel2_tk_img = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(cv.cvtColor(frame, cv.COLOR_BGR2RGB)))
-        self.__label_right.configure(image=self.panel2_tk_img)
+        self.label_right.configure(image=self.panel2_tk_img)
 
     def mouse_pos_wrt_left_label(self) -> (int, int):
         """
         :return: Mouse position with respect to the coordinate system of the left label of PanelView.
         """
-        return self.__label_left.winfo_pointerx() - self.__label_left.winfo_rootx(), \
-               self.__label_left.winfo_pointery() - self.__label_left.winfo_rooty()
+        return self.label_left.winfo_pointerx() - self.label_left.winfo_rootx(), \
+               self.label_left.winfo_pointery() - self.label_left.winfo_rooty()
 
-    def teardown(self):
+    def teardown(self) -> None:
+        """Destroys the created frame"""
         self.frame.destroy()
