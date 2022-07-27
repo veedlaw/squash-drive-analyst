@@ -64,7 +64,7 @@ class Pipeline:
         if self.__bounce_detector.bounced():
             x, y = self.__bounce_detector.get_last_bounce_location()
             Court.draw_ball_projection(self.__court_img, x, y)
-            # stats_tracker.record_bounce(x, y)
+            self.stats_tracker.record_bounce(x, y)
         return frame
 
     def __initialize_preprocessor(self) -> None:
