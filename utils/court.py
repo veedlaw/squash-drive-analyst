@@ -56,6 +56,7 @@ class Court:
 
     half_court_line_mid_court = (int(2 * service_box_len * wConv), short_line_from_front_wall)
     half_court_line_end_court = (int(2 * service_box_len * wConv), side_wall_len)
+
     # endregion court constants
 
     @staticmethod
@@ -133,3 +134,26 @@ class Court:
         chunk_with_circle = cv.addWeighted(court_chunk, 0.7, court_chunk_copy, 0.3, 1.0)
         # Store the chunk back into the original court image
         court[y_chunk_lower: y_chunk_upper, x_chunk_lower: x_chunk_upper] = chunk_with_circle
+
+    @staticmethod
+    def create_target_rects() -> List[Rect]:
+        """
+        TODO
+        :return:
+        """
+
+        dir = 1
+        zone1_R = Rect(x=int(Court.half_court_line_mid_court[0]),
+                       y=Court.short_line_from_front_wall,
+                       width=dir * int(Court.service_box_len * Court.wConv),
+                       height=int(Court.service_box_len * Court.hConv))
+        zone2_R = Rect(zone1_R.x, zone1_R.y + zone1_R.height, zone1_R.width, int((261 / 2) * Court.hConv))
+        zone3_R = Rect(zone1_R.x, zone2_R.y + zone2_R.height, zone2_R.width, int((261 / 2) * Court.hConv) + 8)
+        rects = [zone1_R, zone2_R, zone3_R]
+        widths = [dir * int((Court.service_box_len - 30) * Court.wConv), dir * int(40 * Court.wConv)]
+        for i in range(2):
+            parent_rect = rects[-1]
+            for j in range(3):
+                rects.append(Rect(parent_rect.x + parent_rect.width, rects[j].y, widths[i], rects[j].height))
+
+        return rects
