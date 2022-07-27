@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import tkinter as tk
 from tkinter import messagebox
+import numpy as np
 
 from gui import file_selection, set_up_view, guistate
 from gui.analysis_view import AnalysisView
@@ -61,13 +62,20 @@ class MainApplication(tk.Frame):
         Assumes state change from set-up to analysis state.
         :param evt: TKinter event
         """
+
+        # Gather necessary coordinates for homography mapping
+        service_box_coords_src = np.array(self.view.get_service_box_markers())
+        court_lower_coords_src = np.array(self.view.get_court_lower_boundary_coords())
+        service_box_coords_dst = Court.get_homography_dst_coords(self.__service_box_dir.get())
+        homography_coords = [(service_box_coords_src, court_lower_coords_src), service_box_coords_dst]
+
         # Tear down the old frame
         self.view.teardown()
 
         self.__court_img = Court.get_court_drawing()
         self.__stats_tracker = AccuracyStatistics(Court.create_target_rects(self.__service_box_dir.get()))
 
-        pipeline = Pipeline(self.__video_reader, [0, 0], self.__court_img, self.__stats_tracker)  # TODO
+        pipeline = Pipeline(self.__video_reader, homography_coords, self.__court_img, self.__stats_tracker)
         # Move into analysis view state
         self.view = AnalysisView(self.__master, self.__headless, self.__init_frame, pipeline)
 
