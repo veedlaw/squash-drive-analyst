@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import tkinter as tk
 from tkinter import messagebox
-from threading import Thread
 
 from gui import file_selection, set_up_view, guistate
 from gui.analysis_view import AnalysisView
+from gui.output_view import OutputView
 from pipeline import Pipeline
+from stats import AccuracyStatistics
+from utils.court import Court
 
 from utils.video_reader import VideoReader
 
@@ -28,9 +30,12 @@ class MainApplication(tk.Frame):
         self.view = file_selection.FileSelectionView(master)
 
         self.__init_frame = None
-        self.__video_reader = None  # To-be-selected
+        self.__video_reader = None  # To-be-selected by user
+        self.__stats_tracker = None
+        self.__court_img = None
         self.__headless = tk.BooleanVar()
 
+        # Bind state transition events.
         master.bind(guistate.SETUP, self.__try_change_state_SETUP)
         master.bind(guistate.ANALYSIS, self.__change_state_ANALYSIS)
 
@@ -42,6 +47,7 @@ class MainApplication(tk.Frame):
         """
         if not self.__try_initialize_video_reader(self.view.file_path):
             return
+        self.view.teardown()
 
         self.__init_frame = next(self.__video_reader.get_frame())
         # Move into setup view state
@@ -55,7 +61,10 @@ class MainApplication(tk.Frame):
         # Tear down the old frame
         self.view.teardown()
 
-        pipeline = Pipeline(self.__video_reader, [0, 0])  # TODO
+        self.__court_img = Court.get_court_drawing()
+        self.__stats_tracker = AccuracyStatistics(Court.create_target_rects())
+
+        pipeline = Pipeline(self.__video_reader, [0, 0], self.__court_img, self.__stats_tracker)  # TODO
         # Move into analysis view state
         self.view = AnalysisView(self.__master, self.__headless, self.__init_frame, pipeline)
 

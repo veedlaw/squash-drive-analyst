@@ -4,7 +4,7 @@ from bounce_detector import BounceDetector
 from detector import Detector
 from double_exponential_estimator import DoubleExponentialEstimator
 from preprocessor import Preprocessor
-from stats import create_target_rects, AccuracyStatistics
+from stats import AccuracyStatistics
 from utils.court import Court
 from utils.rect import Rect
 from utils.utilities import draw_rect
@@ -13,17 +13,16 @@ from utils.video_reader import VideoReader
 
 class Pipeline:
 
-    def __init__(self, vr: VideoReader, homography_coords: list):
+    def __init__(self, vr: VideoReader, homography_coords: list, court_img: np.ndarray, stats: AccuracyStatistics):
 
         # Set up the processing pipeline
         self.__video_reader = vr
         self.__preprocessor = Preprocessor()
         self.__estimator = DoubleExponentialEstimator()
         self.__detector = Detector()
-        self.__target_rects = create_target_rects()
-        self.stats_tracker = AccuracyStatistics(self.__target_rects)
-        self.__court_img = Court.get_court_drawing()
-        Court.draw_targets_grid(self.__court_img, self.__target_rects)
+        self.stats_tracker = stats
+        self.__court_img = court_img
+        Court.draw_targets_grid(self.__court_img, stats.get_target_rects())
         self.__bounce_detector = BounceDetector(*homography_coords)
 
         self.__initialize_preprocessor()
