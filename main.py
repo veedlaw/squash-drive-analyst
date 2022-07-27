@@ -38,6 +38,7 @@ class MainApplication(tk.Frame):
         # Bind state transition events.
         master.bind(guistate.SETUP, self.__try_change_state_SETUP)
         master.bind(guistate.ANALYSIS, self.__change_state_ANALYSIS)
+        master.bind(guistate.OUTPUT, self.__change_state_OUTPUT)
 
     def __try_change_state_SETUP(self, evt: tk.Event) -> None:
         """
@@ -68,11 +69,12 @@ class MainApplication(tk.Frame):
         # Move into analysis view state
         self.view = AnalysisView(self.__master, self.__headless, self.__init_frame, pipeline)
 
-    def __change_state_OUTPUT(self) -> None:
+    def __change_state_OUTPUT(self, evt: tk.Event) -> None:
         """
-        TODO
+        Assumes state change from Analysis to output state.
         """
-        pass
+        self.view.teardown()
+        self.view = OutputView(self.__master, self.__stats_tracker, self.__court_img)
 
     def __try_initialize_video_reader(self, file_path) -> bool:
         """
