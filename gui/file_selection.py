@@ -11,8 +11,8 @@ class FileSelectionView:
 
         self.__master = master
         master.title("Select a video")
-        select_file_button = tk.Button(master, text="Choose File", command=self.select_video_path)
-        select_file_button.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.__select_file_button = tk.Button(master, text="Choose File", command=self.select_video_path)
+        self.__select_file_button.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
         self.file_path = None
 
@@ -31,4 +31,8 @@ class FileSelectionView:
             self.__master.event_generate(guistate.SETUP, data=self.file_path)
 
     def teardown(self) -> None:
+        """
+        Destroys the File selection view widgets.
+        """
         self.__master.title("")
+        self.__select_file_button.destroy()
