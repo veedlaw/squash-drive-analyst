@@ -1,8 +1,11 @@
+from typing import Tuple
+
 import numpy as np
 import cv2 as cv
-from collections import namedtuple, deque
+from collections import deque
 from matplotlib import pyplot as plt
 from utils import utilities
+from utils.court import Court
 from utils.rect import Rect
 
 
@@ -11,52 +14,58 @@ class BounceDetector:
     Implements ball bounce detection and bounce visualisation based on ball contour path tracking.
     """
 
-    def __init__(self, src, dst):
-        self.Point = namedtuple('Point', 'x, y')
+    def __init__(self, src: list, dst: list):  # TODO tie in src and dst
+
+        self.src, self.__court_lower_boundary_L, self.__court_lower_boundary_R = self.__reorder_src_coords(src)
+        self.dst = dst
+        self.__remap_dst_coords(self.dst)
 
         # region
         # Hardcoded for development speed purposes
-        self.src = np.array([
-            (170, 494),
-            (203, 460),
-            (340, 507),
-            (340, 466)
-        ])
-        self.dst = np.array([
-            (270, 640),
-            (270, 357),
-            (360, 640),
-            (360, 357)
-        ])
-        # Hardcoded for development speed purposes
-        # Real video coordinates
-        self.__court_lower_boundary_L = (3, 603, 1)
-        self.__court_lower_boundary_R = (354, 636, 1)
+        # self.src = np.array([
+        #     (170, 494),
+        #     (203, 460),
+        #     (340, 466),
+        #     (340, 507)
+        # ])
+        # self.dst = np.array([
+        #     (270, 640),
+        #     (270, 357),
+        #     (360, 357),
+        #     (360, 640)
+        # ])
+        # # Hardcoded for development speed purposes
+        # # Real video coordinates
+        # self.__court_lower_boundary_L = (3, 603, 1)
+        # self.__court_lower_boundary_R = (354, 636, 1)
 
         # self.src = np.array([  # BH2.mov
         #     (77, 338),
         #     (90, 313),
-        #     (273, 337),
-        #     (240, 312)
+        #     (240, 312),
+        #     (273, 337)
         # ])
-        # self.dst = np.array([ #BH2.mov
+        # self.dst = np.array([  # BH2.mov
         #     (0, 640),
         #     (0, 357),
-        #     (90, 640),
-        #     (90, 357)
+        #     (90, 357),
+        #     (90, 640)
         # ])
         # self.__court_lower_boundary_L = (11, 490, 1)
         # self.__court_lower_boundary_R = (355, 480, 1)
 
-        print(self.__court_lower_boundary_L[:2])
-        print(self.__court_lower_boundary_R[:2])
-        print(self.src[0])
-        print(self.src[1])
-        # Modify source coordinates for more accurate mapping
+
+        # Modify service box bottom coordinates for more accurate mapping
+        # An intersection is taken with the line defined by the lower boundary of the court and
+        # the service box vertical lines.
+        # The lower coordinates of the service box corners are then changed to lower coordinates of the court.
+
+        # Thus this allows to directly map the court via homography and create a 1-to-1 mapping between a court
+        # image and the bounce location in the homography image.
         self.src[0] = utilities.get_intersect(self.src[0], self.src[1], self.__court_lower_boundary_L[:2],
                                               self.__court_lower_boundary_R[:2])
-        self.src[2] = utilities.get_intersect(self.src[2], self.src[3], self.__court_lower_boundary_L[:2],
-                                              self.__court_lower_boundary_R[:2])
+        self.src[-1] = utilities.get_intersect(self.src[2], self.src[3], self.__court_lower_boundary_L[:2],
+                                               self.__court_lower_boundary_R[:2])
         # endregion
 
         self.__homography_matrix, _ = cv.findHomography(self.src, self.dst, cv.RANSAC, 5.0)
@@ -97,8 +106,10 @@ class BounceDetector:
                 if not utilities.is_within_window_height(y_proj):
                     return False
 
-            if self.__contour_path_history[0][1] <= self.__contour_path_history[1][1] < self.__contour_path_history[2][1] \
-                 and self.__contour_path_history[2][1] > self.__contour_path_history[3][1] >= self.__contour_path_history[4][1]:
+            if self.__contour_path_history[0][1] <= self.__contour_path_history[1][1] < self.__contour_path_history[2][
+                1] \
+                    and self.__contour_path_history[2][1] > self.__contour_path_history[3][1] >= \
+                    self.__contour_path_history[4][1]:
                 self.__bounce_cooldown_counter = self.__BOUNCE_COOLDOWN
                 return True
         return False
@@ -195,3 +206,10 @@ class BounceDetector:
         boundary_R = max(*boundary_sorted_x, key=x_key) + (1,)
 
         return np.array([left_lower, left_upper, right_upper, right_lower]), boundary_L, boundary_R
+
+    def __remap_dst_coords(self, dst) -> None:
+        """
+        Remaps dst coords from service box corners to service box corners and lower court boundary
+        """
+        dst[0] = (dst[0][0], Court.side_wall_len)
+        dst[-1] = (dst[-1][0], Court.side_wall_len)
