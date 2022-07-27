@@ -1,21 +1,13 @@
 #!/usr/bin/env python3
 import tkinter as tk
 from tkinter import messagebox
+from threading import Thread
 
 from gui import file_selection, set_up_view, guistate
 from gui.analysis_view import AnalysisView
 from pipeline import Pipeline
 
-from preprocessor import *
-from double_exponential_estimator import DoubleExponentialEstimator
-from detector import Detector
-from bounce_detector import BounceDetector
-from stats import AccuracyStatistics, create_target_rects
-from utils.court import Court
 from utils.video_reader import VideoReader
-
-VIDEO_PATH = "../../Downloads/IMG_4189720.mov"
-# VIDEO_PATH = "../../Downloads/bh2.MOV"
 
 
 class MainApplication(tk.Frame):
@@ -36,7 +28,7 @@ class MainApplication(tk.Frame):
         self.view = file_selection.FileSelectionView(master)
 
         self.__init_frame = None
-        self.video_reader = None  # To-be-selected
+        self.__video_reader = None  # To-be-selected
 
         master.bind(guistate.SETUP, self.__try_change_state_SETUP)
         master.bind(guistate.ANALYSIS, self.__change_state_ANALYSIS)
@@ -50,7 +42,7 @@ class MainApplication(tk.Frame):
         if not self.__try_initialize_video_reader(self.view.file_path):
             return
 
-        self.__init_frame = next(self.video_reader.get_frame())
+        self.__init_frame = next(self.__video_reader.get_frame())
         self.view = set_up_view.SetUpWindow(root, self.__init_frame)
 
     def __change_state_ANALYSIS(self, evt: tk.Event) -> None:
@@ -61,7 +53,7 @@ class MainApplication(tk.Frame):
         # Tear down the old frame
         self.view.teardown()
 
-        pipeline = Pipeline(self.video_reader, [0, 0])  # TODO
+        pipeline = Pipeline(self.__video_reader, [0, 0])  # TODO
         # Move into analysis view
         self.view = AnalysisView(self.__master, self.__init_frame, pipeline)
 
@@ -71,8 +63,8 @@ class MainApplication(tk.Frame):
         :return: True if successful, False otherwise.
         """
         try:
-            self.video_reader = VideoReader(file_path)
-            self.video_reader.start_reading()
+            self.__video_reader = VideoReader(file_path)
+            self.__video_reader.start_reading()
             return True
         except:
             messagebox.showerror("Error", "An error occurred during file selection.")
@@ -83,3 +75,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     MainApplication(root)
     root.mainloop()
+    root.quit()
