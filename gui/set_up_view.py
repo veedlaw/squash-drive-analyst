@@ -21,7 +21,7 @@ class SetUpWindow:
 
         # GUI setup
         self.__view = PanelView(master, init_frame)
-        self.__undo_button = tk.Button(self.__view.frame, text="Undo", width=30, command=self.__on_undo)
+        self.__undo_button = tk.Button(self.__view.frame, text="Undo", width=10, command=self.__on_undo)
         self.__undo_button.grid(column=0, row=1)
 
         self.__checkbutton = tk.Checkbutton(self.__view.frame, variable=self.__headless,
