@@ -170,3 +170,28 @@ class BounceDetector:
         plt.legend()
         plt.axis([50, None, 0, 740])
         self.fig.canvas.draw()
+
+    def __reorder_src_coords(self, src_coords: list) -> Tuple:
+        """
+        :param src_coords: 6 source coordinates [4 box coordinates, 2 boundary coordinates]
+        :return: Reordered coordinates starting from left lower service box corner going clockwise and court boundaries'
+        coordinates left and right.
+        """
+
+        box_coords, court_boundary_coords = src_coords
+        y_key = lambda x: x[1]
+        x_key = lambda x: x[0]
+
+        # Enforce an ordering starting from left lower service box going clockwise.
+        box_sorted_by_x = sorted(box_coords, key=x_key)
+        # y-coordinate grows downwards, lower has higher y than upper
+        left_lower = max(box_sorted_by_x[0], box_sorted_by_x[1], key=y_key)
+        left_upper = min(box_sorted_by_x[0], box_sorted_by_x[1], key=y_key)
+        right_upper = min(box_sorted_by_x[2], box_sorted_by_x[3], key=y_key)
+        right_lower = max(box_sorted_by_x[2], box_sorted_by_x[3], key=y_key)
+
+        boundary_sorted_x = sorted(court_boundary_coords, key=lambda x: x[0])
+        boundary_L = min(*boundary_sorted_x, key=x_key) + (1,)
+        boundary_R = max(*boundary_sorted_x, key=x_key) + (1,)
+
+        return np.array([left_lower, left_upper, right_upper, right_lower]), boundary_L, boundary_R
