@@ -25,14 +25,15 @@ class AnalysisView:
         if not headless.get():
             self.__view = PanelView(master, init_frame)
         self.__progress = tk.DoubleVar()
-        self.__progress_bar = tkinter.ttk.Progressbar(self.__master, length=master.winfo_width(), variable=self.__progress)
+        self.__progress_bar = tkinter.ttk.Progressbar(self.__master, length=master.winfo_width(),
+                                                      variable=self.__progress)
         self.__progress_bar.grid(row=1, columnspan=2)
 
         self.__master.title(f"Processing video")
         self.__update_event_str = "<<processedFrame>>"
 
         self.__binds = {'<p>': self.__on_pause, '<h>': self.__toggle_headless,
-                self.__update_event_str: self.__update_view}
+                        self.__update_event_str: self.__update_view}
         for evt, func in self.__binds.items():
             master.bind(evt, func)
 
@@ -52,6 +53,7 @@ class AnalysisView:
         """
         Process the analysis pipeline.
         """
+
         def run():
             for self.__img, self.__court_img in self.__pipeline.process_next():
                 with self.__pause_condition:
@@ -75,6 +77,7 @@ class AnalysisView:
     def __on_pause(self, event: tk.Event) -> None:
         """
         Handle pausing of the processing.
+        Useful for development to verify accuracy.
         """
 
         self.__running = not self.__running
