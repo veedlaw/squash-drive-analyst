@@ -37,6 +37,12 @@ class Pipeline:
             processed = self.__process_frame(frame)
             yield processed, self.__court_img
 
+    def get_progress(self) -> float:
+        """
+        :return: Percentage progress of frames read.
+        """
+        return self.__video_reader.get_progress()
+
     def __process_frame(self, frame: np.ndarray) -> np.ndarray:
         """
         Processes a single frame

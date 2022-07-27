@@ -14,6 +14,7 @@ class VideoReader:
     def __init__(self, video_path: str):
         self.__stream = cv.VideoCapture(video_path)
         self.__current_frame_number = 0
+        self.__total_frames = self.__stream.get(cv.CAP_PROP_FRAME_COUNT)
         self.__stopped = True
         self.__frame_buffer = deque(maxlen=5)
 
@@ -48,6 +49,7 @@ class VideoReader:
         """
         while not self.__stopped:
             if self.__frame_buffer:
+                self.__current_frame_number += 1
                 yield self.__frame_buffer.pop()
 
     def stop_reading(self) -> None:
@@ -55,6 +57,12 @@ class VideoReader:
         Stop the video reader from reading any new frames.
         """
         self.__stopped = True
+
+    def get_progress(self) -> float:
+        """
+        :return: Percentage progress of frames read.
+        """
+        return self.__current_frame_number / self.__total_frames
 
     def __get_frame_from_stream(self) -> np.ndarray:
         """
