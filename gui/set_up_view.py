@@ -14,12 +14,19 @@ class SetUpWindow:
     the user confirms readiness.
     """
 
-    def __init__(self, master, init_frame: np.ndarray):
+    def __init__(self, master, init_frame: np.ndarray, headless_var: tk.BooleanVar):
 
         self.__master = master
+        self.__headless = headless_var
+
+        # GUI setup
         self.__view = PanelView(master, init_frame)
-        self.__undo_button = tk.Button(self.__view.frame, text="Undo", width=50, command=self.__on_undo)
-        self.__undo_button.grid(column=0, columnspan=2)
+        self.__undo_button = tk.Button(self.__view.frame, text="Undo", width=30, command=self.__on_undo)
+        self.__undo_button.grid(column=0, row=1)
+
+        self.__checkbutton = tk.Checkbutton(self.__view.frame, variable=self.__headless,
+                text="Show processing video (Slower)", onvalue=False, offvalue=True)
+        self.__checkbutton.grid(row=1, column=1, sticky='W')
 
         self.__img = init_frame
         self.__img_copy = None
@@ -45,11 +52,6 @@ class SetUpWindow:
         self.__binds = {'<Motion>': self.__on_motion, '<Button-1>': self.__on_click}
         for evt, func in self.__binds.items():
             master.bind(evt, func)
-
-        ###############TODO for development purposes
-        # self.teardown()
-        # AnalysisView(self.__master, self.__img, self.video_reader)
-        ###############TODOV
 
     def __show_start_analysis_dialog(self) -> None:
         """

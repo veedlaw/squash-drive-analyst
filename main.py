@@ -29,6 +29,7 @@ class MainApplication(tk.Frame):
 
         self.__init_frame = None
         self.__video_reader = None  # To-be-selected
+        self.__headless = tk.BooleanVar()
 
         master.bind(guistate.SETUP, self.__try_change_state_SETUP)
         master.bind(guistate.ANALYSIS, self.__change_state_ANALYSIS)
@@ -43,7 +44,8 @@ class MainApplication(tk.Frame):
             return
 
         self.__init_frame = next(self.__video_reader.get_frame())
-        self.view = set_up_view.SetUpWindow(root, self.__init_frame)
+        # Move into setup view state
+        self.view = set_up_view.SetUpWindow(root, self.__init_frame, self.__headless)
 
     def __change_state_ANALYSIS(self, evt: tk.Event) -> None:
         """
@@ -54,8 +56,14 @@ class MainApplication(tk.Frame):
         self.view.teardown()
 
         pipeline = Pipeline(self.__video_reader, [0, 0])  # TODO
-        # Move into analysis view
-        self.view = AnalysisView(self.__master, self.__init_frame, pipeline)
+        # Move into analysis view state
+        self.view = AnalysisView(self.__master, self.__headless, self.__init_frame, pipeline)
+
+    def __change_state_OUTPUT(self) -> None:
+        """
+        TODO
+        """
+        pass
 
     def __try_initialize_video_reader(self, file_path) -> bool:
         """
