@@ -49,10 +49,15 @@ class Court:
     service_box_len = 160
 
     service_box_front_outer_L = (0, short_line_from_front_wall)
+    service_box_front_inner_L = (int(service_box_len * wConv), short_line_from_front_wall)
     service_box_back_inner_L = (int(service_box_len * wConv), short_line_from_front_wall + int(service_box_len * hConv))
+    service_box_back_outer_L = (0, short_line_from_front_wall + int(service_box_len * hConv))
+
     service_box_front_outer_R = (front_wall_len, short_line_from_front_wall)
+    service_box_front_inner_R = (front_wall_len - int(service_box_len * wConv), short_line_from_front_wall)
     service_box_back_inner_R = (front_wall_len - int(service_box_len * wConv),
                                 short_line_from_front_wall + int(service_box_len * hConv))
+    service_box_back_outer_R = (front_wall_len, short_line_from_front_wall + int(service_box_len * hConv))
 
     half_court_line_mid_court = (int(2 * service_box_len * wConv), short_line_from_front_wall)
     half_court_line_end_court = (int(2 * service_box_len * wConv), side_wall_len)
@@ -157,3 +162,26 @@ class Court:
                 rects.append(Rect(parent_rect.x + parent_rect.width, rects[j].y, widths[i], rects[j].height))
 
         return rects
+
+    @staticmethod
+    def get_homography_dst_coords(direction: int) -> np.array:
+        """
+        Based on the direction (left or right service box) return the service box coordinates
+        as drawn in the image
+        :param direction: integer direction as used in create_target_rects
+        :return: List of coordinates
+        """
+        if direction == 1:  # Right
+            return np.array([
+                Court.service_box_back_inner_R,
+                Court.service_box_front_inner_R,
+                Court.service_box_front_outer_R,
+                Court.service_box_back_outer_R
+            ])
+        else:
+            return np.array([
+                Court.service_box_front_outer_L,
+                Court.service_box_back_outer_L,
+                Court.service_box_back_inner_L,
+                Court.service_box_front_inner_L
+            ])
