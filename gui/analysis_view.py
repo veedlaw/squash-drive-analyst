@@ -50,7 +50,7 @@ class AnalysisView:
                     while not self.__running: self.__pause_condition.wait()
                 self.__master.event_generate(self.__update_event_str)
 
-        Thread(target=run).start()
+        Thread(target=run, daemon=True).start()
 
     def __update_view(self, event: tk.Event) -> None:
         """

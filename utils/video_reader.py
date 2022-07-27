@@ -41,7 +41,7 @@ class VideoReader:
             self.__stopped = True
             self.__stream.release()
 
-        Thread(target=fill_buf).start()
+        Thread(target=fill_buf, daemon=True).start()
 
     def get_frame(self) -> np.ndarray:
         """
