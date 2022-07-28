@@ -1,7 +1,9 @@
 import tkinter as tk
-import PIL.Image, PIL.ImageTk
-import numpy as np
+
+import PIL.Image
+import PIL.ImageTk
 import cv2 as cv
+import numpy as np
 
 
 class PanelView(tk.Frame):
