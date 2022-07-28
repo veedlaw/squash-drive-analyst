@@ -212,4 +212,6 @@ class BounceDetector:
         Remaps dst coords from service box corners to service box corners and lower court boundary
         """
         dst[0] = (dst[0][0], Court.side_wall_len)
-        dst[-1] = (dst[-1][0], Court.side_wall_len)
+        self.dst[1] = (dst[1][0], Court.short_line_from_front_wall)
+        self.dst[2] = (dst[2][0], Court.short_line_from_front_wall)
+        dst[3] = (dst[3][0], Court.side_wall_len)
