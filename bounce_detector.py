@@ -14,46 +14,11 @@ class BounceDetector:
     Implements ball bounce detection and bounce visualisation based on ball contour path tracking.
     """
 
-    def __init__(self, src: list, dst: list):  # TODO tie in src and dst
+    def __init__(self, src: list, dst: list):
 
         self.src, self.__court_lower_boundary_L, self.__court_lower_boundary_R = self.__reorder_src_coords(src)
         self.dst = dst
         self.__remap_dst_coords(self.dst)
-
-        # region
-        # Hardcoded for development speed purposes
-        # self.src = np.array([
-        #     (170, 494),
-        #     (203, 460),
-        #     (340, 466),
-        #     (340, 507)
-        # ])
-        # self.dst = np.array([
-        #     (270, 640),
-        #     (270, 357),
-        #     (360, 357),
-        #     (360, 640)
-        # ])
-        # # Hardcoded for development speed purposes
-        # # Real video coordinates
-        # self.__court_lower_boundary_L = (3, 603, 1)
-        # self.__court_lower_boundary_R = (354, 636, 1)
-
-        # self.src = np.array([  # BH2.mov
-        #     (77, 338),
-        #     (90, 313),
-        #     (240, 312),
-        #     (273, 337)
-        # ])
-        # self.dst = np.array([  # BH2.mov
-        #     (0, 640),
-        #     (0, 357),
-        #     (90, 357),
-        #     (90, 640)
-        # ])
-        # self.__court_lower_boundary_L = (11, 490, 1)
-        # self.__court_lower_boundary_R = (355, 480, 1)
-
 
         # Modify service box bottom coordinates for more accurate mapping
         # An intersection is taken with the line defined by the lower boundary of the court and
