@@ -30,7 +30,8 @@ def is_within(rect: Rect, x: float, y: float) -> bool:
     :param y: Y-coordinate
     :return: True if (x, y) lies within the boundaries of the rect. False otherwise.
     """
-    return (rect.x <= x <= rect.x + rect.width) and (rect.y <= y <= rect.y + rect.height)
+    return (rect.x <= x <= rect.x + rect.width) and (rect.y <= y <= rect.y + rect.height) or \
+           ((rect.x >= x >= rect.x + rect.width) and (rect.y <= y <= rect.y + rect.height))
 
 
 def get_intersect(p1: (float, float), p2: (float, float), q1: (float, float), q2: (float, float)) -> (float, float):
