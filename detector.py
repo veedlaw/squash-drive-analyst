@@ -1,14 +1,12 @@
 import sys
-from operator import itemgetter
 from collections import deque
-
+from operator import itemgetter
 from typing import List
-
-from utils import utilities
-from utils.rect import Rect
 
 import cv2 as cv
 import numpy as np
+
+from utils.rect import Rect
 
 
 class Detector:

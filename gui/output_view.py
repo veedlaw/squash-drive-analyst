@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter.constants import LEFT
-import numpy as np
 
 import cv2 as cv
+import numpy as np
+
 from gui.panel_view import PanelView
 from stats import AccuracyStatistics
 

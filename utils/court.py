@@ -1,7 +1,8 @@
 from typing import List
 
-import numpy as np
 import cv2 as cv
+import numpy as np
+
 from utils import utilities
 from utils.rect import Rect
 

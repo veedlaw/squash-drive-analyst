@@ -1,9 +1,11 @@
-import cv2 as cv
 import logging
-import numpy as np
-from utils.utilities import FRAME_WIDTH, FRAME_HEIGHT
-from threading import Thread
 from collections import deque
+from threading import Thread
+
+import cv2 as cv
+import numpy as np
+
+from utils.utilities import FRAME_WIDTH, FRAME_HEIGHT
 
 
 class VideoReader:

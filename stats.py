@@ -1,9 +1,10 @@
 from typing import List
 
+import cv2 as cv
 import numpy as np
+
 from utils import utilities
 from utils.rect import Rect
-import cv2 as cv
 
 
 class AccuracyStatistics:
