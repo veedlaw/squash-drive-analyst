@@ -1,21 +1,10 @@
 import cv2 as cv
 import numpy as np
-from matplotlib import pyplot as plt
 
 from utils.rect import Rect
 
 FRAME_WIDTH = 360
 FRAME_HEIGHT = 640
-
-
-def show_histogram(img):
-    """Debugging function that shows plotted histogram of two images."""
-    hist_full = cv.calcHist([img], [0], None, [255], [0, 255])
-    plt.subplot(221), plt.imshow(img, 'gray')
-    plt.subplot(222), plt.plot(hist_full)
-    plt.xlim([0, 255])
-    plt.show()
-
 
 
 def draw_rect(frame: np.ndarray, rect: Rect, color: (int, int, int), line_width=2) -> None:
