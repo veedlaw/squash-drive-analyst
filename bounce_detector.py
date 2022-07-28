@@ -1,9 +1,10 @@
+from collections import deque
 from typing import Tuple
 
-import numpy as np
 import cv2 as cv
-from collections import deque
+import numpy as np
 from matplotlib import pyplot as plt
+
 from utils import utilities
 from utils.court import Court
 from utils.rect import Rect

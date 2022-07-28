@@ -1,10 +1,9 @@
+import threading
 import tkinter as tk
 import tkinter.ttk
+from threading import Thread
 
 import numpy as np
-
-from threading import Thread
-import threading
 
 from gui import guistate
 from gui.panel_view import PanelView

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import tkinter as tk
 from tkinter import messagebox
+
 import numpy as np
 
 from gui import file_selection, set_up_view, guistate
@@ -9,7 +10,6 @@ from gui.output_view import OutputView
 from pipeline import Pipeline
 from stats import AccuracyStatistics
 from utils.court import Court
-
 from utils.video_reader import VideoReader
 
 
