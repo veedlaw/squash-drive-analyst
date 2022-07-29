@@ -7,12 +7,24 @@
 Use videos of yourself hitting straight drives and automatically collect accuracy data from a session.
 Save the data and track progress over time!
 
-## Usage
+## Software demonstration
 
 https://user-images.githubusercontent.com/75072722/181812643-88f6b03a-2d7f-4083-bea4-656a6f7fb875.mp4
 
+See **[here](./resources/HOWTO.md)** for detailed how-to-use instructions.
 
-See **[here](./resources/HOWTO.md)** for detailed how-to instructions.
+## Installation
+**Pre-requisite:** Download and install [Python3](https://www.python.org/downloads/)
+1. Clone or download this repository
+2. Install the required packages:
+```bash
+pip3 install -r requirements.txt
+```
+
+## Usage
+```bash
+python3 main.py
+```
 
 ## Analysis accuracy
 The software relies on the user to mark the service box and the rear boundary of the court and uses these as parameters for computing the ball bounce location. Therefore, it is advisable to place all markers as accurately as possible.
