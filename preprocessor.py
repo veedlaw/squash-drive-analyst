@@ -14,7 +14,10 @@ class Preprocessor:
     The key part of this stage is capturing and differentiating the moving parts of the video from the
     static parts of the video.
 
-    To achieve this, the following procedure is used:
+    To achieve this, the following procedure developed by 
+    
+    Saumil Sachdeva (http://resolver.tudelft.nl/uuid:758d345d-ecdf-478e-a534-a23300dbe877) is used:
+    
     • Three consecutive frames of the video are gathered
     • All three frames are converted to grayscale images
     • Noise reduction is performed using a gaussian filter
