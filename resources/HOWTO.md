@@ -17,8 +17,8 @@ The program starts with a file selection screen which allows to navigate the fil
 
 _Tip_: A lower resolution video can be processed faster.
 
-
 </br>
+
 ### Setting up
 
 <img width=60% src="./howto_images/setupview.png">
