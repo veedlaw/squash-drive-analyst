@@ -221,8 +221,6 @@ class SetUpWindow:
 
         sorted_by_y = sorted(self.__markers[:self.__num_box_coords], key=lambda x: x[1])
         # Sum x-coordinates and take the mean
-        print(sorted_by_y[0])
-        print(sorted_by_y[1])
         mean = (sorted_by_y[0][0] + sorted_by_y[1][0]) // 2
 
         if mean >= FRAME_WIDTH // 2:
