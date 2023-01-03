@@ -9,7 +9,7 @@ import numpy as np
 from utils.rect import Rect
 
 
-class Detector:
+class Tracker:
     """
     Implements selection of the most probable ball contour from a list of contours.
     """

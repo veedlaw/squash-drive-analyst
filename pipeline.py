@@ -1,7 +1,7 @@
 import numpy as np
 
 from bounce_detector import BounceDetector
-from detector import Detector
+from tracker import Tracker
 from double_exponential_estimator import DoubleExponentialEstimator
 from preprocessor import Preprocessor
 from stats import AccuracyStatistics
@@ -19,7 +19,7 @@ class Pipeline:
         self.__video_reader = vr
         self.__preprocessor = Preprocessor()
         self.__estimator = DoubleExponentialEstimator()
-        self.__detector = Detector()
+        self.__tracker = Tracker()
         self.stats_tracker = stats
         self.__court_img = court_img
         Court.draw_targets_grid(self.__court_img, stats.get_target_rects())
@@ -53,7 +53,7 @@ class Pipeline:
         prediction = self.__estimator.predict(t=1)
         if prediction.x < 0 or prediction.y < 0:
             prediction = Rect(-prediction.width, -prediction.height, prediction.width, prediction.height)
-        ball_bounding_box = self.__detector.select_most_probable_candidate(preprocessed, prediction)
+        ball_bounding_box = self.__tracker.select_most_probable_candidate(preprocessed, prediction)
         self.__estimator.correct(position=ball_bounding_box)
 
         # region drawing
