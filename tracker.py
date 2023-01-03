@@ -69,7 +69,7 @@ class Tracker:
         # frame_copy = cv.cvtColor(frame, cv.COLOR_GRAY2RGB)
         # for contour in cleaned_contours:
         #     utilities.draw_rect(frame_copy, contour, (255, 255, 0))
-        # cv.imshow("Detector view", frame_copy)
+        # cv.imshow("Tracker view", frame_copy)
         # endregion
 
         # Sort the contours in ascending order based on contour area
