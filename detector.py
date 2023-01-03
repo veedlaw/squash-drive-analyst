@@ -5,7 +5,7 @@ import cv2
 from utils.utilities import *
 
 
-class Preprocessor:
+class Detector:
     """
     Preprocesses video frames and extracts the moving foreground from the static background.
     """

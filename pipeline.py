@@ -3,7 +3,7 @@ import numpy as np
 from bounce_detector import BounceDetector
 from tracker import Tracker
 from double_exponential_estimator import DoubleExponentialEstimator
-from preprocessor import Preprocessor
+from detector import Detector
 from stats import AccuracyStatistics
 from utils.court import Court
 from utils.rect import Rect
@@ -17,7 +17,7 @@ class Pipeline:
 
         # Set up the processing pipeline
         self.__video_reader = vr
-        self.__preprocessor = Preprocessor()
+        self.__detector = Detector()
         self.__estimator = DoubleExponentialEstimator()
         self.__tracker = Tracker()
         self.stats_tracker = stats
@@ -49,7 +49,7 @@ class Pipeline:
         :return: Processed frame
         """
 
-        preprocessed = self.__preprocessor.process(frame)
+        preprocessed = self.__detector.process(frame)
         prediction = self.__estimator.predict(t=1)
         if prediction.x < 0 or prediction.y < 0:
             prediction = Rect(-prediction.width, -prediction.height, prediction.width, prediction.height)
@@ -73,6 +73,6 @@ class Pipeline:
         i.e. handling a boundary case.
         """
         for frame in self.__video_reader.get_frame():
-            if self.__preprocessor.ready():
+            if self.__detector.ready():
                 return
-            self.__preprocessor.initialize_with(frame)
+            self.__detector.initialize_with(frame)
