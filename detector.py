@@ -35,7 +35,6 @@ class Detector:
         self.__frame_buffer = deque(maxlen=3)  # contains smoothed grayscale images, used as a "sliding window"
         self.__frame_difference_buffer = deque(maxlen=2)  # contains differenced images, used as a "sliding window"
         self.__dilation_kernel = np.ones((3, 3), np.uint8)
-        self.__prev_deflicker = None
 
     def ready(self) -> bool:
         """
