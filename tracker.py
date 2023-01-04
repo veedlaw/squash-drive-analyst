@@ -150,7 +150,6 @@ class Tracker:
         # Avoid sudden jumps in case the ball is lost for a frame or two
         if self.__prev_best_dist < best_dist - self.__dist_jump_cutoff:
             self.__prev_best_dist *= 1.2  # Inflate the distance as to not get stuck in a loop
-            # print(f"RETURNING PREDICTION Instead of best point: {best_point}")
             self.__candidate_history[-1].extend([prediction])
             return prediction
 
@@ -184,10 +183,8 @@ class Tracker:
 
         # Sort the bounding boxes according to their x-coordinate in increasing order
         bounding_boxes.sort(key=itemgetter(0))
-        # print(f"INITIAL: Found bounding boxes = {bounding_boxes}")
 
         bounding_boxes = self.__join_nearby_bounding_boxes(bounding_boxes)
-        # print(f"PROCESSED: Found bounding boxes = {bounding_boxes}")
 
         return [Rect(*rect) for rect in bounding_boxes]
 
