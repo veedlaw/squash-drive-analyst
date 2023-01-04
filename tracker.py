@@ -211,23 +211,23 @@ class Tracker:
 
                 for j, rect2 in enumerate(bounding_boxes[(i + 1):], start=(i + 1)):
 
-                    candxMin, candyMin, candxMax, candyMax = self.__get_rectangle_contours(rect2)
+                    cand_x_min, cand_y_min, cand_x_max, cand_y_max = self.__get_rectangle_contours(rect2)
 
-                    if current_x_max + join_distance_x >= candxMin:
+                    if current_x_max + join_distance_x >= cand_x_min:
 
-                        if current_y_min < candyMin:
-                            if not current_y_max + join_distance_y >= candyMin:
+                        if current_y_min < cand_y_min:
+                            if not current_y_max + join_distance_y >= cand_y_min:
                                 continue
                         else:
-                            if not current_y_min - join_distance_y <= candyMax:
+                            if not current_y_min - join_distance_y <= cand_y_max:
                                 continue
 
                         processed[j] = True
 
                         # Reset coordinates of current rect
-                        current_x_max = candxMax
-                        current_y_min = min(current_y_min, candyMin)
-                        current_y_max = max(current_y_max, candyMax)
+                        current_x_max = cand_x_max
+                        current_y_min = min(current_y_min, cand_y_min)
+                        current_y_max = max(current_y_max, cand_y_max)
                     else:
                         break
                 new_bounds.append([current_x_min, current_y_min,
