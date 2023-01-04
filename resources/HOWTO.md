@@ -9,6 +9,24 @@ The software allows the user to load a previously captured video run the analysi
 * A heat-map image of the ball bounce locations.
 * Ball bounce location in percentages and absolute numbers with respect to target boxes.
 
+### How to launch
+**Pre-requisite:** Download and install [Python3](https://www.python.org/downloads/)
+1. Clone or download this repository
+2. Create a virtual environment:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+4. Install the required packages:
+```bash
+cd squash_drive_analyst
+pip3 install -r requirements.txt
+```
+5. Launch using:
+```bash
+python3 main.py
+```
+
 
 <img align="right" width="35%" src="./howto_images/selectfile.png"></br>
 ### Video selection
