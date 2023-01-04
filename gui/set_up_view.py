@@ -230,13 +230,13 @@ class SetUpWindow:
 
     def get_service_box_markers(self) -> list:
         """
-        :return: Coordinates marking all four corners of a service box and court lower boundaries.
+        :return: Coordinates marking all four corners of a service box
         """
         return self.__markers[:self.__num_box_coords]
 
     def get_court_lower_boundary_coords(self) -> list:
         """
-        :return:
+        :return: Coordinates marking the rear of the court
         """
         return self.__markers[self.__num_box_coords:self.__num_box_coords + self.__num_back_court_coords]
 
